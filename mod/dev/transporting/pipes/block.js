@@ -25,8 +25,10 @@ function setupItemPipeRender(id, connectionType){
 	model.addConnectionGroup(connectionType);
 	model.addConnectionGroup(PIPE_RENDER_CONNECTION_ITEM_MACHINE);
 	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
+	model.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
 	
 	ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_ANY, id);
+	ICRenderLib.addConnectionBlock(connectionType, id);
 	if (connectionType == ITEM_PIPE_RENDER_CONNECTION_ANY){
 		ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_STONE, id);
 		ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_COBBLE, id);
@@ -49,7 +51,7 @@ Block.createBlock("pipeItemCobble", [
 
 IDRegistry.genBlockID("pipeItemStone");
 Block.createBlock("pipeItemStone", [
-	{name: "Stone Transporting Pipe", texture: [["pipe_item_cobble", 0]], inCreative: true}
+	{name: "Stone Transporting Pipe", texture: [["pipe_item_stone", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemSandstone");
@@ -118,8 +120,10 @@ function setupFluidPipeRender(id, connectionType){
 	model.addConnectionGroup(connectionType);
 	model.addConnectionGroup(PIPE_RENDER_CONNECTION_FLUID_MACHINE);
 	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
+	model.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
 	
 	ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_ANY, id);
+	ICRenderLib.addConnectionBlock(connectionType, id);
 	if (connectionType == FLUID_PIPE_RENDER_CONNECTION_ANY){
 		ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_STONE, id);
 		ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_COBBLE, id);
@@ -142,7 +146,7 @@ Block.createBlock("pipeFluidCobble", [
 
 IDRegistry.genBlockID("pipeFluidStone");
 Block.createBlock("pipeFluidStone", [
-	{name: "Stone Fluid Pipe", texture: [["pipe_fluid_cobble", 0]], inCreative: true}
+	{name: "Stone Fluid Pipe", texture: [["pipe_fluid_stone", 0]], inCreative: true}
 ], BLOCK_TYPE_LIQUID_PIPE);
 
 IDRegistry.genBlockID("pipeFluidIron");
