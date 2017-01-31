@@ -39,52 +39,309 @@ var RED_FONT_MEDIUM = {color: android.graphics.Color.RED, size: 28, shadow: .7};
 
 
 
+function TileRenderModel(id, data){
+	this.registerAsId = function(id, data){
+		var block = Unlimited.API.GetReal(id, data || 0);
+		this.id = block.id;
+		this.data = block.data;
+		this.convertedId = this.id * 16 + this.data;
+		
+		if (this.convertedId){
+			ICRenderLib.registerTileModel(this.convertedId, this);
+		}
+		else{
+			Logger.Log("tile model cannot be registred: block id is undefined or 0", "ERROR");
+		}
+	}
+	
+	this.cloneForId = function(id, data){
+		this.registerAsId(id, data);
+	}
+	
+	this.registerAsId(id, data);
+	
+	this.boxes = [];
+	this.dynamic = [];
+
+	this.formatBox = function(x1, y1, z1, x2, y2, z2, block){
+		var M = 1.0;
+		var box = [
+			x1 * M, y1 * M, z1 * M,
+			x2 * M, y2 * M, z2 * M,
+		];
+
+		if (block){
+			block = Unlimited.API.GetReal(block.id, block.data);
+			box.push(parseInt(block.id) || 0);
+			box.push(parseInt(block.data) || 0)
+		}
+		else{
+			box.push(-1);
+			box.push(-1);
+		}
+
+		return box;
+	}
+
+	this.addBoxF = function(x1, y1, z1, x2, y2, z2, block){
+		this.boxes.push(this.formatBox(x1, y1, z1, x2, y2, z2, block));
+	}
+ 
+	this.addBox = function(x, y, z, size, block){
+		this.boxes.push(this.formatBox(
+				x, y, z,
+				(x + size.x),
+				(y + size.y),
+				(z + size.z), 
+				block
+			)
+		);
+	}
+
+	this.createCondition = function(x, y, z, mode){
+		var model = this;
+		var condition = {
+			x: x, y: y, z: z,
+			mode: Math.max(0, mode || 0),
+
+			boxes: [],
+			
+			addBoxF: function(x1, y1, z1, x2, y2, z2, block){
+				this.boxes.push(model.formatBox(x1, y1, z1, x2, y2, z2, block));
+			},
+
+			addBox: function(x, y, z, size, block){
+				this.boxes.push(model.formatBox(
+						x, y, z,
+						(x + size.x),
+						(y + size.y),
+						(z + size.z), 
+						block
+					)
+				);
+			},
+
+			tiles: {},
+			tileGroups: [],
+			
+			addBlock: function(id, data){
+				var block = Unlimited.API.GetReal(id, data || 0);
+				var convertedId = block.id * 16 + block.data;
+				this.tiles[convertedId] = true;
+			},
+			
+			addBlockGroup: function(name){
+				this.tileGroups.push(name);
+			},
+			
+			addBlockGroupFinal: function(name){
+				var group = ICRenderLib.getConnectionGroup(name);
+				for (var id in group){
+					this.tiles[id] = true;
+				}
+			},
+			
+			writeCondition: function(){
+				var output = parseInt(this.x) + " " + parseInt(this.y) + " " + parseInt(this.z) + " " + parseInt(this.mode) + "\n";
+				
+				for (var i in this.tileGroups){
+					this.addBlockGroupFinal(this.tileGroups[i]);
+				}
+				
+				var blocks = [];
+				for(var id in this.tiles){
+					blocks.push(id);
+				}
+				output += blocks.length + " " + blocks.join(" ") + "\n" + condition.boxes.length + "\n";
+				
+				for(var i in condition.boxes){
+					output += condition.boxes[i].join(" ") + "\n";
+				}
+				
+				return output;
+			}
+		};
+
+		this.dynamic.push(condition);
+		return condition;
+	}
+	
+	this.connections = {};
+	this.connectionGroups = [];
+	this.connectionWidth = 0.5;
+	this.hasConnections = false;
+	
+	this.setConnectionWidth = function(width){
+		this.connectionWidth = width;
+	}
+	
+	this.addConnection = function(id, data){
+		var block = Unlimited.API.GetReal(id, data || 0);
+		var convertedId = block.id * 16 + block.data;
+		this.connections[convertedId] = true;
+		this.hasConnections = true;
+	}
+	
+	this.addConnectionGroup = function(name){
+		this.connectionGroups.push(name);
+		this.hasConnections = true;
+	}
+	
+	this.addConnectionGroupFinal = function(name){
+		var group = ICRenderLib.getConnectionGroup(name);
+		for (var id in group){
+			this.connections[id] = true;
+		}
+	}
+	
+	this.addSelfConnection = function(){
+		this.connections[this.convertedId] = true;
+		this.hasConnections = true;
+	}
+	
+	this.writeAsId = function(id){
+		var output = "";
+		output += id + " " + (this.hasConnections ? 1 : 0) + "\n";
+		output += this.boxes.length + "\n";
+		
+		for (var i in this.boxes){
+			output += this.boxes[i].join(" ") + "\n";
+		}
+
+		output += this.dynamic.length + "\n";
+		for(var i in this.dynamic){
+			var condition = this.dynamic[i];
+			output += condition.writeCondition();
+		}
+		
+		for (var i in this.connectionGroups){
+			this.addConnectionGroupFinal(this.connectionGroups[i]);
+		}
+		
+		var connections = [];
+		for (var id in this.connections){
+			connections.push(id);
+		}
+		
+		output += connections.length + " " + this.connectionWidth + "\n" + connections.join(" ");
+		return output;
+	}
+}
+
+
 var ICRenderLib = ModAPI.requireAPI("ICRenderLib");
 
 if (!ICRenderLib){
-	ICRenderLib = {
-		wireTiles: {},
-		connectorTiles: {},
+	var ICRenderLib = {
+		/* model registry */
+		tileModels: {},
 		
-		addTileToArray: function(array, id, data){
-			var real = Unlimited.API.GetReal(id, data);
-			array[real.id * 16 + real.data] = true;
+		registerTileModel: function(convertedId, model){
+			this.tileModels[convertedId] = model;
 		},
 		
-		addAllDatasToArray: function(array, id){
+		/* output */
+		writeAllData: function(){
+			var output = "";
+			var count = 0;
+			for (var id in this.tileModels){
+				output += this.tileModels[id].writeAsId(id) + "\n\n";
+				count++;
+			}
+			
+			output = count + "\n\n" + output;
+			FileTools.WriteText("games/com.mojang/mods/icrender", output);
+		},
+		
+		/* connection groups functions */
+		connectionGroups: {},
+		
+		addConnectionBlockWithData: function(name, blockId, blockData){
+			var group = this.connectionGroups[name];
+			if (!group){
+				group = {};
+				this.connectionGroups[name] = group;
+			}
+			
+			var block = Unlimited.API.GetReal(blockId, blockData);
+			group[block.id * 16 + block.data] = true;
+		},
+		
+		addConnectionBlock: function(name, blockId){
 			for (var data = 0; data < 16; data++){
-				this.addTileToArray(array, id, data);
+				this.addConnectionBlockWithData(name, blockId, data);
 			}
 		},
 		
-		registerAsWire: function(id){
-			this.addAllDatasToArray(this.wireTiles, id);
+		addConnectionGroup: function(name, blockIds){
+			for (var i in blockIds){
+				this.addConnectionBlock(name, blockIds[i]);
+			}
 		},
 		
-		registerAsConnector: function(id){
-			this.addAllDatasToArray(this.connectorTiles, id);
+		getConnectionGroup: function(name){
+			return this.connectionGroups[name];
 		},
 		
-		writeData: function(){
-			var wires = [];
-			for (var id in this.wireTiles){
-				wires.push(parseInt(id));
-			}
-			var connectors = [];
-			for (var id in this.connectorTiles){
-				connectors.push(parseInt(id));
-			}
-			var filecontent = wires.length + "\n" + wires.join(" ") + "\n" + connectors.length + "\n" + connectors.join(" ");
-			FileTools.WriteText("games/com.mojang/mods/icrender", filecontent);
+		
+		/* standart models */
+		registerAsWire: function(id, connectionGroupName, width){
+			width = width || 0.5;
+			
+			var model = new TileRenderModel(id, 0);
+			model.addConnectionGroup(connectionGroupName);
+			model.addSelfConnection();
+			model.setConnectionWidth(width);
+			model.addBox(.5 - width / 2.0, .5 - width / 2.0, .5 - width / 2.0, {
+				x: width,
+				y: width,
+				z: width,
+			});
+			
+			this.addConnectionBlock(connectionGroupName, id);
 		}
 	};
 	
+	
 	ModAPI.registerAPI("ICRenderLib", ICRenderLib);
 	Callback.addCallback("PostLoaded", function(){
-		ICRenderLib.writeData();
+		ICRenderLib.writeAllData();
 	});
 	Logger.Log("ICRender API was created and shared by " + __name__ + " with name ICRenderLib", "API");
 }
+
+
+
+
+/**
+
+// exampe of block model
+
+Block.setPrototype("pillar", {
+	getVariations: function(){
+		return [
+			{name: "Pillar", texture: [["cobblestone", 0]], inCreative: true}
+		]
+	}
+});
+Block.setBlockShape(BlockID.pillar, {x: 0.25, y: 0, z: 0.25},  {x: 0.75, y: 1, z: 0.75})
+
+var pillarRender = new TileRenderModel(BlockID.pillar);
+
+var pillarCondition1 = pillarRender.createCondition(0, -1, 0, 1);
+var pillarCondition2 = pillarRender.createCondition(0, 1, 0, 1);
+pillarCondition1.addBlock(BlockID.pillar, 0);
+pillarCondition2.addBlock(BlockID.pillar, 0);
+
+for(var i = 0; i < 4; i++){
+	pillarCondition1.addBoxF(i / 16, i / 16, i / 16, 1.0 - i / 16, (i + 1) / 16, 1.0 - i / 16);
+	pillarCondition2.addBoxF(i / 16, 1.0 - (i + 1) / 16, i / 16, 1.0 - i / 16, 1.0 - i / 16, 1.0 - i / 16);
+}
+
+pillarRender.addBoxF(0.25, 0.0, 0.25, 0.75, 1.0, 0.75, {id: 5, data: 2});
+
+*/
+
 
 
 var ModelHelper = {
@@ -116,6 +373,8 @@ var ModelHelper = {
 var IndustrialIntergation = {
 	
 }
+
+
 
 
 IDRegistry.genItemID("bcWrench");
@@ -593,14 +852,38 @@ Callback.addCallback("ItemUse", function(coords, carried, block){
 var BLOCK_TYPE_ITEM_PIPE = Block.createSpecialType({
 	base: 20,
 	renderlayer: 3
-});
+}, "bc-item-pipe");
 
 var BLOCK_TYPE_LIQUID_PIPE = Block.createSpecialType({
 	base: 20,
 	renderlayer: 3
-});
+}, "bc-liquid-pipe");
 
 var PIPE_BLOCK_WIDTH = 0.25;
+
+
+// item pipe render setup
+
+var PIPE_RENDER_CONNECTION_ITEM_MACHINE = "bc-item-pipe-mech";
+
+var ITEM_PIPE_RENDER_CONNECTION_ANY = "bc-item-pipe-any";
+var ITEM_PIPE_RENDER_CONNECTION_STONE = "bc-item-pipe-stone";
+var ITEM_PIPE_RENDER_CONNECTION_COBBLE = "bc-item-pipe-cobble";
+var ITEM_PIPE_RENDER_CONNECTION_SANDSTONE = "bc-item-pipe-sandstone";
+
+function setupItemPipeRender(id, connectionType){
+	var model = new TileRenderModel(id, 0);
+	model.addConnectionGroup(connectionType);
+	model.addConnectionGroup(PIPE_RENDER_CONNECTION_ITEM_MACHINE);
+	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
+	
+	ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_ANY, id);
+	if (connectionType == ITEM_PIPE_RENDER_CONNECTION_ANY){
+		ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_STONE, id);
+		ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_COBBLE, id);
+		ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_SANDSTONE, id);
+	}
+}
 
 
 // item pipes 
@@ -660,15 +943,40 @@ Block.setBlockShape(BlockID.pipeItemObsidian, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5
 Block.setBlockShape(BlockID.pipeItemEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemDiamond, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 
-ICRenderLib.registerAsWire(BlockID.pipeItemWooden);
-ICRenderLib.registerAsWire(BlockID.pipeItemCobble);
-ICRenderLib.registerAsWire(BlockID.pipeItemStone);
-ICRenderLib.registerAsWire(BlockID.pipeItemSandstone);
-ICRenderLib.registerAsWire(BlockID.pipeItemIron);
-ICRenderLib.registerAsWire(BlockID.pipeItemGolden);
-ICRenderLib.registerAsWire(BlockID.pipeItemObsidian);
-ICRenderLib.registerAsWire(BlockID.pipeItemEmerald);
-ICRenderLib.registerAsWire(BlockID.pipeItemDiamond);
+setupItemPipeRender(BlockID.pipeItemWooden, ITEM_PIPE_RENDER_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemCobble, ITEM_PIPE_RENDER_CONNECTION_COBBLE);
+setupItemPipeRender(BlockID.pipeItemStone, ITEM_PIPE_RENDER_CONNECTION_STONE);
+setupItemPipeRender(BlockID.pipeItemSandstone, ITEM_PIPE_RENDER_CONNECTION_SANDSTONE);
+setupItemPipeRender(BlockID.pipeItemIron, ITEM_PIPE_RENDER_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemGolden, ITEM_PIPE_RENDER_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemObsidian, ITEM_PIPE_RENDER_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemEmerald, ITEM_PIPE_RENDER_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemDiamond, ITEM_PIPE_RENDER_CONNECTION_ANY);
+
+
+
+// fluid pipe render setup
+
+var PIPE_RENDER_CONNECTION_FLUID_MACHINE = "bc-fluid-pipe-mech";
+
+var FLUID_PIPE_RENDER_CONNECTION_ANY = "bc-fluid-pipe-any";
+var FLUID_PIPE_RENDER_CONNECTION_STONE = "bc-fluid-pipe-stone";
+var FLUID_PIPE_RENDER_CONNECTION_COBBLE = "bc-fluid-pipe-cobble";
+var FLUID_PIPE_RENDER_CONNECTION_SANDSTONE = "bc-fluid-pipe-sandstone";
+
+function setupFluidPipeRender(id, connectionType){
+	var model = new TileRenderModel(id, 0);
+	model.addConnectionGroup(connectionType);
+	model.addConnectionGroup(PIPE_RENDER_CONNECTION_FLUID_MACHINE);
+	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
+	
+	ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_ANY, id);
+	if (connectionType == FLUID_PIPE_RENDER_CONNECTION_ANY){
+		ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_STONE, id);
+		ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_COBBLE, id);
+		ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_SANDSTONE, id);
+	}
+}
 
 
 // fluid pipes
@@ -711,12 +1019,12 @@ Block.setBlockShape(BlockID.pipeFluidIron, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - 
 Block.setBlockShape(BlockID.pipeFluidGolden, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeFluidEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 
-ICRenderLib.registerAsWire(BlockID.pipeFluidWooden);
-ICRenderLib.registerAsWire(BlockID.pipeFluidCobble);
-ICRenderLib.registerAsWire(BlockID.pipeFluidStone);
-ICRenderLib.registerAsWire(BlockID.pipeFluidIron);
-ICRenderLib.registerAsWire(BlockID.pipeFluidGolden);
-ICRenderLib.registerAsWire(BlockID.pipeFluidEmerald);
+setupFluidPipeRender(BlockID.pipeFluidWooden, FLUID_PIPE_RENDER_CONNECTION_ANY);
+setupFluidPipeRender(BlockID.pipeFluidCobble, FLUID_PIPE_RENDER_CONNECTION_COBBLE);
+setupFluidPipeRender(BlockID.pipeFluidStone, FLUID_PIPE_RENDER_CONNECTION_STONE);
+setupFluidPipeRender(BlockID.pipeFluidIron, FLUID_PIPE_RENDER_CONNECTION_ANY);
+setupFluidPipeRender(BlockID.pipeFluidGolden, FLUID_PIPE_RENDER_CONNECTION_ANY);
+setupFluidPipeRender(BlockID.pipeFluidEmerald, FLUID_PIPE_RENDER_CONNECTION_ANY);
 
 
 TileEntity.registerPrototype(BlockID.pipeItemWooden, {
