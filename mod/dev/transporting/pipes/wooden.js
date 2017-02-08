@@ -10,10 +10,9 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 		if (containerData && containerData.container){
 			var item = this.getItemFrom(containerData.container, amount >= 8 ? amount * 8 : 1);
 			if (item){
-				var transportedItem = new TransportingItem();
+				var transportedItem = TransportingItem.deploy();
 				transportedItem.setPosition(containerData.position.x + .5, containerData.position.y + .5, containerData.position.z + .5);
 				transportedItem.setItem(item.id, item.count, item.data);
-				transportedItem.load();
 			}
 			else{
 				this.data.containerIndex++;
