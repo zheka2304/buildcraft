@@ -8,12 +8,13 @@ Block.registerDropFunction("bcEngine", function(){
 	return [];
 });
 
+Block.setBlockShape(BlockID.bcEngine, {x: 1 / 16, y: 1 / 16, z: 1 / 16}, {x: 15 / 16, y: 15 / 16, z: 15 / 16});
+
 TransportingHelper.denyTransporting(BlockID.bcEngine, true, true);
 
 
 
-
-TileEntity.registerPrototype(BlockID.bcEngine, {
+var BUILDCRAFT_ENGINE_PROTOTYPE = {
 	defaultValues:{
 		type: null,
 		rotation: 0,
@@ -33,6 +34,7 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 	destroyAnimation: function(){
 		if (this.animationPiston){
 			this.animationPiston.destroy();
+			this.animationPiston = null;
 		}
 	},
 	
@@ -40,7 +42,7 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 		this.destroyAnimation();
 		
 		var engineValues = this.data;
-		this.animationPiston = new Animation.Base(this.x + .5, this.y + .5, this.z + .5);
+		this.animationPiston = new Animation.Base(this.x + .5, this.y + 15 / 16, this.z + .5);
 		this.animationPiston.loadCustom(function(){
 			var animData = EngineModelHelper.createPiston(engineValues.type, engineValues.heatStage, engineValues.rotation, engineValues.direction, Math.abs(parseInt(engineValues.position) % 48 - 24));
 			this.describe(animData);
@@ -185,15 +187,16 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 	
 	setEngineType: function(type){
 		this.data.type = type;
-		this.engineTick = getEngineTypeValue(this.data.type, "engineTick");
-		this.energyDeploy = getEngineTypeValue(this.data.type, "energyDeploy");
-		this.getEngineGui = getEngineTypeValue(this.data.type, "getGuiScreen");
-		this.getItemDrop = getEngineTypeValue(this.data.type, "getItemDrop");
-		this.getHeatStage = getEngineTypeValue(this.data.type, "getHeatStage");
+		var typeData = getEngineType(this.data.type);
 		
-		var defaultValues = getEngineTypeValue(this.data.type, "defaultValues");
-		for (var name in defaultValues){
-			this.data[name] = defaultValues[name];
+		if (typeData){
+			for (var name in typeData){
+				this[name] = typeData[name];
+			}
+			
+			for (var name in typeData.defaultValues){
+				this.data[name] = typeData.defaultValues[name];
+			}
 		}
 	},
 	
@@ -231,10 +234,6 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 		}
 	},
 	
-	destroy: function(){
-		this.destroyAnimation();
-	},
-	
 	redstone: function(signal){
 		this.data.redstone = signal.power > 8;
 	},
@@ -246,6 +245,7 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 	},
 	
 	destroy: function(){
+		this.destroyAnimation();
 		if (this.getItemDrop){
 			var drop = this.getItemDrop();
 			for (var i in drop){
@@ -253,4 +253,13 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 			}
 		}
 	}
-})
+};
+
+Callback.addCallback("BC-DefineEngines", function(ICore){
+	if (ICore){
+		ICore.Machine.registerPrototype(BlockID.bcEngine, BUILDCRAFT_ENGINE_PROTOTYPE);
+	}
+	else{
+		TileEntity.registerPrototype(BlockID.bcEngine, BUILDCRAFT_ENGINE_PROTOTYPE);
+	}
+});

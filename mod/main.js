@@ -370,9 +370,21 @@ var ModelHelper = {
 }
 
 
-var IndustrialIntergation = {
-	
-}
+var IndustrialCraftAPI = null;
+
+ModAPI.addAPICallback("ICore", function(ICore){
+	IndustrialCraftAPI = ICore;
+});
+
+Callback.addCallback("PostLoaded", function(){
+	if (IndustrialCraftAPI){
+		Callback.invokeCallback("BC-DefineEngines", IndustrialCraftAPI);
+		Callback.invokeCallback("BC-ICore", IndustrialCraftAPI);
+	}
+	else{
+		Callback.invokeCallback("BC-DefineEngines", null);
+	}
+});
 
 
 
@@ -382,13 +394,16 @@ Item.createItem("bcWrench", "Wrench", {name: "bc_wrench"});
 
 
 IDRegistry.genItemID("engineWooden");
-Item.createItem("engineWooden", "Redstone Engine", {name: "wooden_engine"});
+Item.createItem("engineWooden", "Redstone Engine", {name: "engine_wooden"});
 
 IDRegistry.genItemID("engineStone");
-Item.createItem("engineStone", "Stirling Engine", {name: "stone_engine"});
+Item.createItem("engineStone", "Stirling Engine", {name: "engine_stone"});
 
 IDRegistry.genItemID("engineIron");
-Item.createItem("engineIron", "ICE", {name: "iron_engine"});
+Item.createItem("engineIron", "ICE", {name: "engine_iron"});
+
+IDRegistry.genItemID("engineElectric");
+Item.createItem("engineElectric", "Electric Engine", {name: "engine_electric"});
 
 Item.registerUseFunction("engineWooden", function(coords, item, block){
 	var block = World.getBlock(coords.relative.x, coords.relative.y, coords.relative.z);
@@ -413,6 +428,15 @@ Item.registerUseFunction("engineIron", function(coords, item, block){
 	if (block.id == 0){
 		World.setBlock(coords.relative.x, coords.relative.y, coords.relative.z, BlockID.bcEngine);
 		World.addTileEntity(coords.relative.x, coords.relative.y, coords.relative.z).setEngineType(ENGINE_TYPE_IRON);
+		Player.setCarriedItem(item.id, item.count - 1, item.data);
+	}
+});
+
+Item.registerUseFunction("engineElectric", function(coords, item, block){
+	var block = World.getBlock(coords.relative.x, coords.relative.y, coords.relative.z);
+	if (block.id == 0){
+		World.setBlock(coords.relative.x, coords.relative.y, coords.relative.z, BlockID.bcEngine);
+		World.addTileEntity(coords.relative.x, coords.relative.y, coords.relative.z).setEngineType(ENGINE_TYPE_ELECTRIC);
 		Player.setCarriedItem(item.id, item.count - 1, item.data);
 	}
 });
@@ -1146,10 +1170,16 @@ EngineModelPartRegistry.Add("engineIron0", new ModelHelper.Texture("buildcraft_e
 EngineModelPartRegistry.Add("engineIron1", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 320, y: 64}, {width: 512, height: 512}));
 EngineModelPartRegistry.Add("engineIron2", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 384, y: 64}, {width: 512, height: 512}));
 
+EngineModelPartRegistry.Add("engineElectric0", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 256, y: 96}, {width: 512, height: 512}));
+EngineModelPartRegistry.Add("engineElectric1", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 320, y: 96}, {width: 512, height: 512}));
+EngineModelPartRegistry.Add("engineElectric2", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 384, y: 96}, {width: 512, height: 512}));
+
 
 var ENGINE_TYPE_WOOD = "Wood";
 var ENGINE_TYPE_STONE = "Stone";
 var ENGINE_TYPE_IRON = "Iron";
+var ENGINE_TYPE_ELECTRIC = "Electric";
+var ENGINE_TYPE_ELECTRIC_ADVANCED = "AdvElectric";
 
 var ENGINE_HEAT_BLUE = "Blue";
 var ENGINE_HEAT_GREEN = "Green";
@@ -1168,6 +1198,10 @@ var ENGINE_ROTATION_X = 1;
 var ENGINE_ROTATION_Z = 2;
 
 var ENGINE_TYPE_DATA = {};
+
+function getEngineType(type){
+	return ENGINE_TYPE_DATA[type];
+}
 
 function getEngineTypeValue(type, method){
 	if (ENGINE_TYPE_DATA[type]){
@@ -1206,12 +1240,14 @@ var EngineModelHelper = {
 		var renderName = [type, heat, rotation, direction, position] + "";
 		var render = new Render({name: renderName});
 		if (render.isEmpty){
+			var yOffset = 31;
+			
 			var modelData = [{
 				type: "box",
 				uv: pistonMaterial.getUV(),
 				coords: {
 					x: 0 + coords.x * 6,
-					y: 24 + coords.y * 6,
+					y: yOffset + coords.y * 6,
 					z: 0 + coords.z * 6,
 				},
 				size: {
@@ -1225,7 +1261,7 @@ var EngineModelHelper = {
 				uv: pistonMaterial.getUV(),
 				coords: {
 					x: 0 + coords.x * (2 - position / 3),
-					y: 24 + coords.y * (2 - position / 3),
+					y: yOffset + coords.y * (2 - position / 3),
 					z: 0 + coords.z * (2 - position / 3),
 				},
 				size: {
@@ -1241,7 +1277,7 @@ var EngineModelHelper = {
 					uv: trunkMaterial.getUV(),
 					coords: {
 						x: 0 - coords.x * .1,
-						y: 24 - coords.y * .1,
+						y: yOffset - coords.y * .1,
 						z: 0 - coords.z * .1
 					},
 					size: {
@@ -1254,14 +1290,17 @@ var EngineModelHelper = {
 			render.setPart("body", modelData, pistonMaterial.getSize());
 			render.saveState(renderName);
 		}
+		else{
+			//alert("render already cached: " + renderName);
+		}
 		
 		return {
 			skin: pistonMaterial.getTexture(),
 			renderAPI: render,
 			firmRotation: true,
 			hitbox: {
-				width: .2,
-				height: .4
+				width: .0,
+				height: .0
 			}
 		};
 	}
@@ -1279,12 +1318,13 @@ Block.registerDropFunction("bcEngine", function(){
 	return [];
 });
 
+Block.setBlockShape(BlockID.bcEngine, {x: 1 / 16, y: 1 / 16, z: 1 / 16}, {x: 15 / 16, y: 15 / 16, z: 15 / 16});
+
 TransportingHelper.denyTransporting(BlockID.bcEngine, true, true);
 
 
 
-
-TileEntity.registerPrototype(BlockID.bcEngine, {
+var BUILDCRAFT_ENGINE_PROTOTYPE = {
 	defaultValues:{
 		type: null,
 		rotation: 0,
@@ -1304,6 +1344,7 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 	destroyAnimation: function(){
 		if (this.animationPiston){
 			this.animationPiston.destroy();
+			this.animationPiston = null;
 		}
 	},
 	
@@ -1311,7 +1352,7 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 		this.destroyAnimation();
 		
 		var engineValues = this.data;
-		this.animationPiston = new Animation.Base(this.x + .5, this.y + .5, this.z + .5);
+		this.animationPiston = new Animation.Base(this.x + .5, this.y + 15 / 16, this.z + .5);
 		this.animationPiston.loadCustom(function(){
 			var animData = EngineModelHelper.createPiston(engineValues.type, engineValues.heatStage, engineValues.rotation, engineValues.direction, Math.abs(parseInt(engineValues.position) % 48 - 24));
 			this.describe(animData);
@@ -1456,15 +1497,16 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 	
 	setEngineType: function(type){
 		this.data.type = type;
-		this.engineTick = getEngineTypeValue(this.data.type, "engineTick");
-		this.energyDeploy = getEngineTypeValue(this.data.type, "energyDeploy");
-		this.getEngineGui = getEngineTypeValue(this.data.type, "getGuiScreen");
-		this.getItemDrop = getEngineTypeValue(this.data.type, "getItemDrop");
-		this.getHeatStage = getEngineTypeValue(this.data.type, "getHeatStage");
+		var typeData = getEngineType(this.data.type);
 		
-		var defaultValues = getEngineTypeValue(this.data.type, "defaultValues");
-		for (var name in defaultValues){
-			this.data[name] = defaultValues[name];
+		if (typeData){
+			for (var name in typeData){
+				this[name] = typeData[name];
+			}
+			
+			for (var name in typeData.defaultValues){
+				this.data[name] = typeData.defaultValues[name];
+			}
 		}
 	},
 	
@@ -1502,10 +1544,6 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 		}
 	},
 	
-	destroy: function(){
-		this.destroyAnimation();
-	},
-	
 	redstone: function(signal){
 		this.data.redstone = signal.power > 8;
 	},
@@ -1517,6 +1555,7 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 	},
 	
 	destroy: function(){
+		this.destroyAnimation();
 		if (this.getItemDrop){
 			var drop = this.getItemDrop();
 			for (var i in drop){
@@ -1524,7 +1563,16 @@ TileEntity.registerPrototype(BlockID.bcEngine, {
 			}
 		}
 	}
-})
+};
+
+Callback.addCallback("BC-DefineEngines", function(ICore){
+	if (ICore){
+		ICore.Machine.registerPrototype(BlockID.bcEngine, BUILDCRAFT_ENGINE_PROTOTYPE);
+	}
+	else{
+		TileEntity.registerPrototype(BlockID.bcEngine, BUILDCRAFT_ENGINE_PROTOTYPE);
+	}
+});
 
 
 ENGINE_TYPE_DATA[ENGINE_TYPE_WOOD] = {
@@ -1679,7 +1727,7 @@ function getFuelForStoneEngine(container, slotName){
 
 var guiIronEngine = new UI.StandartWindow({
 	standart: {
-		header: {text: {text: "Iron Engine"}},
+		header: {text: {text: "ICE"}},
 		inventory: {standart: true},
 		background: {standart: true}
 	},
@@ -1784,5 +1832,88 @@ ENGINE_TYPE_DATA[ENGINE_TYPE_IRON] = {
 	}
 };
 
+
+
+var guiElectricEngine = new UI.StandartWindow({
+	standart: {
+		header: {text: {text: "Electric Engine"}},
+		inventory: {standart: true},
+		background: {standart: true}
+	},
+	
+	drawing: [
+		{type: "bitmap", x: 400, y: 30, bitmap: "electric_scale_background", scale: 10.0 / 3.0}
+	],
+	
+	elements: {
+		"energyScale": {type: "scale", x: 400, y: 30, direction: 1, value: 0.5, bitmap: "electric_scale", scale: 10.0 / 3.0},
+		"textInfo1": {type: "text", x: 535, y: 150, width: 300, height: 50, font: STD_FONT_MEDIUM, text: ""},
+		"textInfo2": {type: "text", x: 535, y: 200, width: 300, height: 50, font: RED_FONT_MEDIUM, text: ""}
+	}
+});
+
+
+ENGINE_TYPE_DATA[ENGINE_TYPE_ELECTRIC] = {
+	defaultValues: {
+		energyStored: 0,
+		pistonDelay: 0,
+	},
+	
+	getGuiScreen: function(){
+		return guiElectricEngine;
+	},
+	
+	getItemDrop: function(){
+		return [[ItemID.engineElectric, 1, 0]];
+	},
+	
+	getHeatStage: function(){
+		var MAX_HEAT = 200;
+		var index = parseInt(this.data.heat / MAX_HEAT * 3.5);
+		return index;
+	},
+	
+	engineTick: function(){
+		var MAX_HEAT = 200;
+		if (this.data.redstone && this.data.energyStored > 0){
+			this.setPower(this.getHeatStage() + .4);
+			if (this.isPushingForward()){
+				this.data.heat += .2;
+			}
+			else{
+				this.data.heat -= .1;
+			}
+			this.data.pistonDelay ++;
+		}
+		else{
+			this.setPower(0);
+			this.data.heat -= .1;
+			this.data.pistonDelay = 0;
+		}
+		
+		this.container.setScale("energyScale", this.data.energyStored / 50);
+		this.container.setText("textInfo1", parseInt(this.data.heat) + "°C   " + (this.data.redstone ? parseInt(this.data.energyInfo * 100 || 0) / 100 + " MJ/t": ""));
+		this.container.setText("textInfo2", (this.data.redstone && this.data.energyStored > 0 ? "ON" : "OFF") + (this.data.energyStored > 0 ? "" : ": NO ENERGY"));
+		this.container.setTextColor("textInfo2", this.data.redstone && this.data.energyStored > 0 ? android.graphics.Color.GREEN : android.graphics.Color.RED);
+		
+		this.data.heat = Math.min(Math.max(this.data.heat, 0), MAX_HEAT);
+	},
+	
+	energyDeploy: function(params){
+		var energy = this.data.energyStored;
+		this.data.energyStored = 0;
+		this.data.energyInfo = energy / this.data.pistonDelay;
+		this.data.pistonDelay = 0;
+		return energy;
+	},
+	
+	energyTick: function(){
+		var EU_TO_MJ = 1 / 2.5;
+		var MAX_MJ_OUT = 5;
+		
+		var energy = this.web.requireEnergy(MAX_MJ_OUT / EU_TO_MJ) * EU_TO_MJ;
+		this.data.energyStored += energy;
+	}
+};
 
 

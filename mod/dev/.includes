@@ -2,7 +2,7 @@ header.js
 
 api/icrender.js
 api/model.js
-api/industrial/energy_integration.js
+api/industrial-energy.js
 
 items/components.js
 items/wrench.js
@@ -20,3 +20,4 @@ energy/engine/block.js
 energy/engine/wood.js
 energy/engine/stone.js
 energy/engine/iron.js
+energy/industrial/industrial-engine.js

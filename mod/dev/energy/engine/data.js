@@ -39,10 +39,16 @@ EngineModelPartRegistry.Add("engineIron0", new ModelHelper.Texture("buildcraft_e
 EngineModelPartRegistry.Add("engineIron1", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 320, y: 64}, {width: 512, height: 512}));
 EngineModelPartRegistry.Add("engineIron2", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 384, y: 64}, {width: 512, height: 512}));
 
+EngineModelPartRegistry.Add("engineElectric0", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 256, y: 96}, {width: 512, height: 512}));
+EngineModelPartRegistry.Add("engineElectric1", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 320, y: 96}, {width: 512, height: 512}));
+EngineModelPartRegistry.Add("engineElectric2", new ModelHelper.Texture("buildcraft_engine_atlas.png", {x: 384, y: 96}, {width: 512, height: 512}));
+
 
 var ENGINE_TYPE_WOOD = "Wood";
 var ENGINE_TYPE_STONE = "Stone";
 var ENGINE_TYPE_IRON = "Iron";
+var ENGINE_TYPE_ELECTRIC = "Electric";
+var ENGINE_TYPE_ELECTRIC_ADVANCED = "AdvElectric";
 
 var ENGINE_HEAT_BLUE = "Blue";
 var ENGINE_HEAT_GREEN = "Green";
@@ -61,6 +67,10 @@ var ENGINE_ROTATION_X = 1;
 var ENGINE_ROTATION_Z = 2;
 
 var ENGINE_TYPE_DATA = {};
+
+function getEngineType(type){
+	return ENGINE_TYPE_DATA[type];
+}
 
 function getEngineTypeValue(type, method){
 	if (ENGINE_TYPE_DATA[type]){

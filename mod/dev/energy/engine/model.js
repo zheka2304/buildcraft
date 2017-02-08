@@ -28,12 +28,14 @@ var EngineModelHelper = {
 		var renderName = [type, heat, rotation, direction, position] + "";
 		var render = new Render({name: renderName});
 		if (render.isEmpty){
+			var yOffset = 31;
+			
 			var modelData = [{
 				type: "box",
 				uv: pistonMaterial.getUV(),
 				coords: {
 					x: 0 + coords.x * 6,
-					y: 24 + coords.y * 6,
+					y: yOffset + coords.y * 6,
 					z: 0 + coords.z * 6,
 				},
 				size: {
@@ -47,7 +49,7 @@ var EngineModelHelper = {
 				uv: pistonMaterial.getUV(),
 				coords: {
 					x: 0 + coords.x * (2 - position / 3),
-					y: 24 + coords.y * (2 - position / 3),
+					y: yOffset + coords.y * (2 - position / 3),
 					z: 0 + coords.z * (2 - position / 3),
 				},
 				size: {
@@ -63,7 +65,7 @@ var EngineModelHelper = {
 					uv: trunkMaterial.getUV(),
 					coords: {
 						x: 0 - coords.x * .1,
-						y: 24 - coords.y * .1,
+						y: yOffset - coords.y * .1,
 						z: 0 - coords.z * .1
 					},
 					size: {
@@ -76,14 +78,17 @@ var EngineModelHelper = {
 			render.setPart("body", modelData, pistonMaterial.getSize());
 			render.saveState(renderName);
 		}
+		else{
+			//alert("render already cached: " + renderName);
+		}
 		
 		return {
 			skin: pistonMaterial.getTexture(),
 			renderAPI: render,
 			firmRotation: true,
 			hitbox: {
-				width: .2,
-				height: .4
+				width: .0,
+				height: .0
 			}
 		};
 	}
