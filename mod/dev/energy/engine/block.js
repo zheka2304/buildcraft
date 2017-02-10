@@ -10,7 +10,7 @@ Block.registerDropFunction("bcEngine", function(){
 
 Block.setBlockShape(BlockID.bcEngine, {x: 1 / 16, y: 1 / 16, z: 1 / 16}, {x: 15 / 16, y: 15 / 16, z: 15 / 16});
 
-TransportingHelper.denyTransporting(BlockID.bcEngine, true, true);
+denyTransporting(BlockID.bcEngine, true, true);
 
 
 

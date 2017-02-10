@@ -203,12 +203,20 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 	},
 	
 	pathfind: function(){
-		var pathdata = TransportingHelper.getPathData(this, this.item, this.pos, this.direction);
+		if (this.dropFlag){
+			this.drop();
+			return;
+		}
+		
+		var pathdata = ItemTransportingHelper.getPathData(this, this.item, this.pos, this.direction);
 		var directions = pathdata.directions;
 		var dir = directions[parseInt(directions.length * Math.random())];
 		
 		if (pathdata.inPipe){			
-			dir = dir || this.direction;
+			if (!dir){
+				dir = this.direction;
+				this.dropFlag = true;
+			}
 			this.inPipeFlag = true;
 		}
 		else if (pathdata.container){

@@ -21,7 +21,7 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 	},
 	
 	findContainer: function(){
-		var directions = TransportingHelper.findNearbyContainers(this);
+		var directions = ItemTransportingHelper.findNearbyContainers(this);
 		var dir = directions[this.data.containerIndex % directions.length];
 		
 		if (dir){

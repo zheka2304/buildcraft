@@ -1,10 +1,19 @@
-var TransportingHelper = {
-	ItemPipeTiles: {
-		
+function denyTransporting(id, item, fluid){
+	if (item){
+		ItemTransportingHelper.TransportingDenied[id] = true;
+	}
+	if (fluid){
+		// TODO: fill as liquid pipes will be added
+	}
+};
+
+var ItemTransportingHelper = {
+	PipeTiles: {
+		// connection types are registred with render connections
 	},
 	
-	FluidPipeTiles: {
-		
+	TransportingDenied: {
+		// TODO: add more blocks
 	},
 	
 	BasicItemContainers: {
@@ -13,57 +22,28 @@ var TransportingHelper = {
 		62: true
 	},
 	
-	ItemTransportingDenied: {
-		
+	registerItemPipe: function(pipe, type){
+		this.PipeTiles[pipe] = type;
 	},
 	
-	FluidTransportingDenied: {
-		
+	isPipe: function(block){
+		return this.PipeTiles[block];
 	},
 	
-	denyTransporting: function(id, item, fluid){
-		if (item){
-			this.ItemTransportingDenied[id] = true;
-		}
-		if (fluid){
-			this.FluidTransportingDenied[id] = true;
-		}
+	canPipesConnect: function(pipe1, pipe2){
+		var type1 = this.PipeTiles[pipe1];
+		var type2 = this.PipeTiles[pipe2];
+		return type1 == type2 || type1 == ITEM_PIPE_CONNECTION_ANY || type2 == ITEM_PIPE_CONNECTION_ANY;
 	},
 	
-	isItemTransportDir: function(x, y, z){
+	canTransportTo: function(pipe, x, y, z){
 		var block = World.getBlock(x, y, z).id;
-		return (this.ItemPipeTiles[block] || this.BasicItemContainers[block] || TileEntity.isTileEntityBlock(block)) && !this.ItemTransportingDenied[block];
-	},
-	
-	isItemPipe: function(x, y, z){
-		return nativeGetTile(x, y, z) == BLOCK_TYPE_ITEM_PIPE;
-	},
-	
-	isFluidPipe: function(x, y, z){
-		return nativeGetTile(x, y, z) == BLOCK_TYPE_LIQUID_PIPE;
-	},
-	
-	
-	findBasicDirections: function(position, direction, checkBackwardDirection){
-		var directions = [
-			{x: -1, y: 0, z: 0},
-			{x: 1, y: 0, z: 0},
-			{x: 0, y: -1, z: 0},
-			{x: 0, y: 1, z: 0},
-			{x: 0, y: 0, z: -1},
-			{x: 0, y: 0, z: 1},
-		];
-		var possibleDirs = [];
-		for (var i in directions){
-			var dir = directions[i];
-			if (checkBackwardDirection && dir.x == -direction.x && dir.y == -direction.y && dir.z == -direction.z){
-				continue;
-			}
-			if (this.isItemTransportDir(position.x + dir.x, position.y + dir.y, position.z + dir.z)){
-				possibleDirs.push(dir);
-			}
+		if (this.BasicItemContainers[block])
+			return true; 
+		if (block > 4096){
+			return TileEntity.isTileEntityBlock(block) || this.canPipesConnect(block, pipe);
 		}
-		return possibleDirs;
+		return false;
 	},
 	
 	findNearbyContainers: function(position){
@@ -81,9 +61,31 @@ var TransportingHelper = {
 			var container = World.getContainer(position.x + dir.x, position.y + dir.y, position.z + dir.z);
 			if (container){
 				var block = World.getBlock(position.x + dir.x, position.y + dir.y, position.z + dir.z).id;
-				if (!this.ItemTransportingDenied[block]){
+				if (!this.TransportingDenied[block]){
 					possibleDirs.push(dir);
 				}
+			}
+		}
+		return possibleDirs;
+	},
+	
+	findBasicDirections: function(pipe, position, direction, checkBackwardDirection){
+		var directions = [
+			{x: -1, y: 0, z: 0},
+			{x: 1, y: 0, z: 0},
+			{x: 0, y: -1, z: 0},
+			{x: 0, y: 1, z: 0},
+			{x: 0, y: 0, z: -1},
+			{x: 0, y: 0, z: 1},
+		];
+		var possibleDirs = [];
+		for (var i in directions){
+			var dir = directions[i];
+			if (checkBackwardDirection && dir.x == -direction.x && dir.y == -direction.y && dir.z == -direction.z){
+				continue;
+			}
+			if (this.canTransportTo(pipe, position.x + dir.x, position.y + dir.y, position.z + dir.z)){
+				possibleDirs.push(dir);
 			}
 		}
 		return possibleDirs;
@@ -97,13 +99,14 @@ var TransportingHelper = {
 		};
 		var cachedData;
 		
-		// TODO: chaching block start
-		var inPipe = this.isItemPipe(position.x, position.y, position.z);
+		// cache block start
+		var pipeTile = World.getBlock(position.x, position.y, position.z).id;
+		var inPipe = this.isPipe(pipeTile);
 		var container = World.getContainer(position.x, position.y, position.z);
 		var tileEntity = container && container.tileEntity;
 		
 		var checkBackwardDirection = !container || (inPipe && !(tileEntity && tileEntity.getTransportedItemDirs));
-		var possibleDirs = this.findBasicDirections(position, direction, checkBackwardDirection);
+		var possibleDirs = this.findBasicDirections(pipeTile, position, direction, checkBackwardDirection);
 		
 		cachedData = {
 			tileEntity: tileEntity,
@@ -111,7 +114,8 @@ var TransportingHelper = {
 			inPipe: inPipe,
 			possibleDirs: possibleDirs
 		};
-		// TODO: chaching block end
+		// cache block end
+		// TODO: add caching
 		
 		if (cachedData.tileEntity && cachedData.tileEntity.getTransportedItemDirs){
 			var resultDirs = cachedData.tileEntity.getTransportedItemDirs(transportedItem, cachedData.possibleDirs, item, direction);
@@ -127,17 +131,4 @@ var TransportingHelper = {
 			tileEntity: cachedData.tileEntity
 		};
 	}
-};
-
-// register item pipes
-Callback.addCallback("PostLoaded", function(){
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemWooden] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemCobble] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemStone] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemSandstone] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemIron] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemGolden] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemObsidian] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemEmerald] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemDiamond] = true;
-});
+}

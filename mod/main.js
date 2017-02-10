@@ -442,13 +442,22 @@ Item.registerUseFunction("engineElectric", function(coords, item, block){
 });
 
 
-var TransportingHelper = {
-	ItemPipeTiles: {
-		
+function denyTransporting(id, item, fluid){
+	if (item){
+		ItemTransportingHelper.TransportingDenied[id] = true;
+	}
+	if (fluid){
+		// TODO: fill as liquid pipes will be added
+	}
+};
+
+var ItemTransportingHelper = {
+	PipeTiles: {
+		// connection types are registred with render connections
 	},
 	
-	FluidPipeTiles: {
-		
+	TransportingDenied: {
+		// TODO: add more blocks
 	},
 	
 	BasicItemContainers: {
@@ -457,57 +466,28 @@ var TransportingHelper = {
 		62: true
 	},
 	
-	ItemTransportingDenied: {
-		
+	registerItemPipe: function(pipe, type){
+		this.PipeTiles[pipe] = type;
 	},
 	
-	FluidTransportingDenied: {
-		
+	isPipe: function(block){
+		return this.PipeTiles[block];
 	},
 	
-	denyTransporting: function(id, item, fluid){
-		if (item){
-			this.ItemTransportingDenied[id] = true;
-		}
-		if (fluid){
-			this.FluidTransportingDenied[id] = true;
-		}
+	canPipesConnect: function(pipe1, pipe2){
+		var type1 = this.PipeTiles[pipe1];
+		var type2 = this.PipeTiles[pipe2];
+		return type1 == type2 || type1 == ITEM_PIPE_CONNECTION_ANY || type2 == ITEM_PIPE_CONNECTION_ANY;
 	},
 	
-	isItemTransportDir: function(x, y, z){
+	canTransportTo: function(pipe, x, y, z){
 		var block = World.getBlock(x, y, z).id;
-		return (this.ItemPipeTiles[block] || this.BasicItemContainers[block] || TileEntity.isTileEntityBlock(block)) && !this.ItemTransportingDenied[block];
-	},
-	
-	isItemPipe: function(x, y, z){
-		return nativeGetTile(x, y, z) == BLOCK_TYPE_ITEM_PIPE;
-	},
-	
-	isFluidPipe: function(x, y, z){
-		return nativeGetTile(x, y, z) == BLOCK_TYPE_LIQUID_PIPE;
-	},
-	
-	
-	findBasicDirections: function(position, direction, checkBackwardDirection){
-		var directions = [
-			{x: -1, y: 0, z: 0},
-			{x: 1, y: 0, z: 0},
-			{x: 0, y: -1, z: 0},
-			{x: 0, y: 1, z: 0},
-			{x: 0, y: 0, z: -1},
-			{x: 0, y: 0, z: 1},
-		];
-		var possibleDirs = [];
-		for (var i in directions){
-			var dir = directions[i];
-			if (checkBackwardDirection && dir.x == -direction.x && dir.y == -direction.y && dir.z == -direction.z){
-				continue;
-			}
-			if (this.isItemTransportDir(position.x + dir.x, position.y + dir.y, position.z + dir.z)){
-				possibleDirs.push(dir);
-			}
+		if (this.BasicItemContainers[block])
+			return true; 
+		if (block > 4096){
+			return TileEntity.isTileEntityBlock(block) || this.canPipesConnect(block, pipe);
 		}
-		return possibleDirs;
+		return false;
 	},
 	
 	findNearbyContainers: function(position){
@@ -525,9 +505,31 @@ var TransportingHelper = {
 			var container = World.getContainer(position.x + dir.x, position.y + dir.y, position.z + dir.z);
 			if (container){
 				var block = World.getBlock(position.x + dir.x, position.y + dir.y, position.z + dir.z).id;
-				if (!this.ItemTransportingDenied[block]){
+				if (!this.TransportingDenied[block]){
 					possibleDirs.push(dir);
 				}
+			}
+		}
+		return possibleDirs;
+	},
+	
+	findBasicDirections: function(pipe, position, direction, checkBackwardDirection){
+		var directions = [
+			{x: -1, y: 0, z: 0},
+			{x: 1, y: 0, z: 0},
+			{x: 0, y: -1, z: 0},
+			{x: 0, y: 1, z: 0},
+			{x: 0, y: 0, z: -1},
+			{x: 0, y: 0, z: 1},
+		];
+		var possibleDirs = [];
+		for (var i in directions){
+			var dir = directions[i];
+			if (checkBackwardDirection && dir.x == -direction.x && dir.y == -direction.y && dir.z == -direction.z){
+				continue;
+			}
+			if (this.canTransportTo(pipe, position.x + dir.x, position.y + dir.y, position.z + dir.z)){
+				possibleDirs.push(dir);
 			}
 		}
 		return possibleDirs;
@@ -541,13 +543,14 @@ var TransportingHelper = {
 		};
 		var cachedData;
 		
-		// TODO: chaching block start
-		var inPipe = this.isItemPipe(position.x, position.y, position.z);
+		// cache block start
+		var pipeTile = World.getBlock(position.x, position.y, position.z).id;
+		var inPipe = this.isPipe(pipeTile);
 		var container = World.getContainer(position.x, position.y, position.z);
 		var tileEntity = container && container.tileEntity;
 		
 		var checkBackwardDirection = !container || (inPipe && !(tileEntity && tileEntity.getTransportedItemDirs));
-		var possibleDirs = this.findBasicDirections(position, direction, checkBackwardDirection);
+		var possibleDirs = this.findBasicDirections(pipeTile, position, direction, checkBackwardDirection);
 		
 		cachedData = {
 			tileEntity: tileEntity,
@@ -555,7 +558,8 @@ var TransportingHelper = {
 			inPipe: inPipe,
 			possibleDirs: possibleDirs
 		};
-		// TODO: chaching block end
+		// cache block end
+		// TODO: add caching
 		
 		if (cachedData.tileEntity && cachedData.tileEntity.getTransportedItemDirs){
 			var resultDirs = cachedData.tileEntity.getTransportedItemDirs(transportedItem, cachedData.possibleDirs, item, direction);
@@ -571,20 +575,7 @@ var TransportingHelper = {
 			tileEntity: cachedData.tileEntity
 		};
 	}
-};
-
-// register item pipes
-Callback.addCallback("PostLoaded", function(){
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemWooden] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemCobble] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemStone] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemSandstone] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemIron] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemGolden] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemObsidian] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemEmerald] = true;
-	TransportingHelper.ItemPipeTiles[BlockID.pipeItemDiamond] = true;
-});
+}
 
 
 var TransportingItem = new GameObject("bcTransportingItem", {
@@ -792,12 +783,20 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 	},
 	
 	pathfind: function(){
-		var pathdata = TransportingHelper.getPathData(this, this.item, this.pos, this.direction);
+		if (this.dropFlag){
+			this.drop();
+			return;
+		}
+		
+		var pathdata = ItemTransportingHelper.getPathData(this, this.item, this.pos, this.direction);
 		var directions = pathdata.directions;
 		var dir = directions[parseInt(directions.length * Math.random())];
 		
 		if (pathdata.inPipe){			
-			dir = dir || this.direction;
+			if (!dir){
+				dir = this.direction;
+				this.dropFlag = true;
+			}
 			this.inPipeFlag = true;
 		}
 		else if (pathdata.container){
@@ -852,27 +851,29 @@ var PIPE_BLOCK_WIDTH = 0.25;
 
 // item pipe render setup
 
-var PIPE_RENDER_CONNECTION_ITEM_MACHINE = "bc-item-pipe-mech";
+var PIPE_CONNECTION_ITEM_MACHINE = "bc-item-pipe-mech";
 
-var ITEM_PIPE_RENDER_CONNECTION_ANY = "bc-item-pipe-any";
-var ITEM_PIPE_RENDER_CONNECTION_STONE = "bc-item-pipe-stone";
-var ITEM_PIPE_RENDER_CONNECTION_COBBLE = "bc-item-pipe-cobble";
-var ITEM_PIPE_RENDER_CONNECTION_SANDSTONE = "bc-item-pipe-sandstone";
+var ITEM_PIPE_CONNECTION_ANY = "bc-item-pipe-any";
+var ITEM_PIPE_CONNECTION_STONE = "bc-item-pipe-stone";
+var ITEM_PIPE_CONNECTION_COBBLE = "bc-item-pipe-cobble";
+var ITEM_PIPE_CONNECTION_SANDSTONE = "bc-item-pipe-sandstone";
 
 function setupItemPipeRender(id, connectionType){
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
-	model.addConnectionGroup(PIPE_RENDER_CONNECTION_ITEM_MACHINE);
+	model.addConnectionGroup(PIPE_CONNECTION_ITEM_MACHINE);
 	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
 	model.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
 	
-	ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_ANY, id);
+	ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_ANY, id);
 	ICRenderLib.addConnectionBlock(connectionType, id);
-	if (connectionType == ITEM_PIPE_RENDER_CONNECTION_ANY){
-		ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_STONE, id);
-		ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_COBBLE, id);
-		ICRenderLib.addConnectionBlock(ITEM_PIPE_RENDER_CONNECTION_SANDSTONE, id);
+	if (connectionType == ITEM_PIPE_CONNECTION_ANY){
+		ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_STONE, id);
+		ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_COBBLE, id);
+		ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_SANDSTONE, id);
 	}
+	
+	ItemTransportingHelper.registerItemPipe(id, connectionType);
 }
 
 
@@ -933,40 +934,40 @@ Block.setBlockShape(BlockID.pipeItemObsidian, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5
 Block.setBlockShape(BlockID.pipeItemEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemDiamond, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 
-setupItemPipeRender(BlockID.pipeItemWooden, ITEM_PIPE_RENDER_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemCobble, ITEM_PIPE_RENDER_CONNECTION_COBBLE);
-setupItemPipeRender(BlockID.pipeItemStone, ITEM_PIPE_RENDER_CONNECTION_STONE);
-setupItemPipeRender(BlockID.pipeItemSandstone, ITEM_PIPE_RENDER_CONNECTION_SANDSTONE);
-setupItemPipeRender(BlockID.pipeItemIron, ITEM_PIPE_RENDER_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemGolden, ITEM_PIPE_RENDER_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemObsidian, ITEM_PIPE_RENDER_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemEmerald, ITEM_PIPE_RENDER_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemDiamond, ITEM_PIPE_RENDER_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemWooden, ITEM_PIPE_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemCobble, ITEM_PIPE_CONNECTION_COBBLE);
+setupItemPipeRender(BlockID.pipeItemStone, ITEM_PIPE_CONNECTION_STONE);
+setupItemPipeRender(BlockID.pipeItemSandstone, ITEM_PIPE_CONNECTION_SANDSTONE);
+setupItemPipeRender(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemGolden, ITEM_PIPE_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemObsidian, ITEM_PIPE_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemEmerald, ITEM_PIPE_CONNECTION_ANY);
+setupItemPipeRender(BlockID.pipeItemDiamond, ITEM_PIPE_CONNECTION_ANY);
 
 
 
 // fluid pipe render setup
 
-var PIPE_RENDER_CONNECTION_FLUID_MACHINE = "bc-fluid-pipe-mech";
+var PIPE_CONNECTION_FLUID_MACHINE = "bc-fluid-pipe-mech";
 
-var FLUID_PIPE_RENDER_CONNECTION_ANY = "bc-fluid-pipe-any";
-var FLUID_PIPE_RENDER_CONNECTION_STONE = "bc-fluid-pipe-stone";
-var FLUID_PIPE_RENDER_CONNECTION_COBBLE = "bc-fluid-pipe-cobble";
-var FLUID_PIPE_RENDER_CONNECTION_SANDSTONE = "bc-fluid-pipe-sandstone";
+var FLUID_PIPE_CONNECTION_ANY = "bc-fluid-pipe-any";
+var FLUID_PIPE_CONNECTION_STONE = "bc-fluid-pipe-stone";
+var FLUID_PIPE_CONNECTION_COBBLE = "bc-fluid-pipe-cobble";
+var FLUID_PIPE_CONNECTION_SANDSTONE = "bc-fluid-pipe-sandstone";
 
 function setupFluidPipeRender(id, connectionType){
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
-	model.addConnectionGroup(PIPE_RENDER_CONNECTION_FLUID_MACHINE);
+	model.addConnectionGroup(PIPE_CONNECTION_FLUID_MACHINE);
 	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
 	model.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
 	
-	ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_ANY, id);
+	ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_ANY, id);
 	ICRenderLib.addConnectionBlock(connectionType, id);
-	if (connectionType == FLUID_PIPE_RENDER_CONNECTION_ANY){
-		ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_STONE, id);
-		ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_COBBLE, id);
-		ICRenderLib.addConnectionBlock(FLUID_PIPE_RENDER_CONNECTION_SANDSTONE, id);
+	if (connectionType == FLUID_PIPE_CONNECTION_ANY){
+		ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_STONE, id);
+		ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_COBBLE, id);
+		ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_SANDSTONE, id);
 	}
 }
 
@@ -1011,12 +1012,12 @@ Block.setBlockShape(BlockID.pipeFluidIron, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - 
 Block.setBlockShape(BlockID.pipeFluidGolden, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeFluidEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 
-setupFluidPipeRender(BlockID.pipeFluidWooden, FLUID_PIPE_RENDER_CONNECTION_ANY);
-setupFluidPipeRender(BlockID.pipeFluidCobble, FLUID_PIPE_RENDER_CONNECTION_COBBLE);
-setupFluidPipeRender(BlockID.pipeFluidStone, FLUID_PIPE_RENDER_CONNECTION_STONE);
-setupFluidPipeRender(BlockID.pipeFluidIron, FLUID_PIPE_RENDER_CONNECTION_ANY);
-setupFluidPipeRender(BlockID.pipeFluidGolden, FLUID_PIPE_RENDER_CONNECTION_ANY);
-setupFluidPipeRender(BlockID.pipeFluidEmerald, FLUID_PIPE_RENDER_CONNECTION_ANY);
+setupFluidPipeRender(BlockID.pipeFluidWooden, FLUID_PIPE_CONNECTION_ANY);
+setupFluidPipeRender(BlockID.pipeFluidCobble, FLUID_PIPE_CONNECTION_COBBLE);
+setupFluidPipeRender(BlockID.pipeFluidStone, FLUID_PIPE_CONNECTION_STONE);
+setupFluidPipeRender(BlockID.pipeFluidIron, FLUID_PIPE_CONNECTION_ANY);
+setupFluidPipeRender(BlockID.pipeFluidGolden, FLUID_PIPE_CONNECTION_ANY);
+setupFluidPipeRender(BlockID.pipeFluidEmerald, FLUID_PIPE_CONNECTION_ANY);
 
 
 TileEntity.registerPrototype(BlockID.pipeItemWooden, {
@@ -1042,7 +1043,7 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 	},
 	
 	findContainer: function(){
-		var directions = TransportingHelper.findNearbyContainers(this);
+		var directions = ItemTransportingHelper.findNearbyContainers(this);
 		var dir = directions[this.data.containerIndex % directions.length];
 		
 		if (dir){
@@ -1283,7 +1284,7 @@ Block.registerDropFunction("bcEngine", function(){
 
 Block.setBlockShape(BlockID.bcEngine, {x: 1 / 16, y: 1 / 16, z: 1 / 16}, {x: 15 / 16, y: 15 / 16, z: 15 / 16});
 
-TransportingHelper.denyTransporting(BlockID.bcEngine, true, true);
+denyTransporting(BlockID.bcEngine, true, true);
 
 
 
