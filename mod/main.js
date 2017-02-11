@@ -444,7 +444,7 @@ Item.registerUseFunction("engineElectric", function(coords, item, block){
 
 var TRANSPORTING_CACHE_DEBUG = false;
 
-var ItemTransportingCache = {
+var TransportingCache = {
 	cache: [],
 	
 	debug: {
@@ -469,15 +469,15 @@ var ItemTransportingCache = {
 
 
 Callback.addCallback("LevelLoaded", function(){
-	ItemTransportingCache.clear();
+	TransportingCache.clear();
 });
 
 Callback.addCallback("ItemUse", function(){
-	ItemTransportingCache.clear();
+	TransportingCache.clear();
 });
 
 Callback.addCallback("DestroyBlock", function(){
-	ItemTransportingCache.clear();
+	TransportingCache.clear();
 });
 
 
@@ -485,26 +485,26 @@ Callback.addCallback("DestroyBlock", function(){
  * Debug output
 */
 if (TRANSPORTING_CACHE_DEBUG){
-	ItemTransportingCache.registerInfo = function(x, y, z, info){
+	TransportingCache.registerInfo = function(x, y, z, info){
 		this.debug.overrides++;
 		var key = x + "." + y + "." + z;
 		this.cache[key] = info;
 	};
 	
-	ItemTransportingCache.getInfo = function(x, y, z, info){
+	TransportingCache.getInfo = function(x, y, z, info){
 		this.debug.calls++;
 		var key = x + "." + y + "." + z;
 		return this.cache[key];
 	};
 	
-	ItemTransportingCache.debugTick = function(){
+	TransportingCache.debugTick = function(){
 		Game.tipMessage(JSON.stringify(this.debug, "\t"));
 		this.debug.calls = 0;
 		this.debug.overrides = 0;
 	};
 	
 	Callback.addCallback("tick", function(){
-		ItemTransportingCache.debugTick();
+		TransportingCache.debugTick();
 	});
 }
 
@@ -523,6 +523,10 @@ var ItemTransportingHelper = {
 		// connection types are registred with render connections
 	},
 	
+	PipeParams: {
+		// params like friction are stored here
+	},
+	
 	TransportingDenied: {
 		// TODO: add all blocks
 	},
@@ -533,8 +537,15 @@ var ItemTransportingHelper = {
 		62: true
 	},
 	
-	registerItemPipe: function(pipe, type){
+	registerItemPipe: function(pipe, type, params){
 		this.PipeTiles[pipe] = type;
+		if (!params){
+			params = {};
+		}
+		if (!params.friction){
+			params.friction = 0;
+		}
+		this.PipeParams[pipe] = params;
 	},
 	
 	isPipe: function(block){
@@ -542,8 +553,8 @@ var ItemTransportingHelper = {
 	},
 	
 	canPipesConnect: function(pipe1, pipe2){
-		var type1 = this.PipeTiles[pipe1];
-		var type2 = this.PipeTiles[pipe2];
+		var type1 = this.PipeTiles[pipe1] || ITEM_PIPE_CONNECTION_ANY;
+		var type2 = this.PipeTiles[pipe2] || ITEM_PIPE_CONNECTION_ANY;
 		return type1 == type2 || type1 == ITEM_PIPE_CONNECTION_ANY || type2 == ITEM_PIPE_CONNECTION_ANY;
 	},
 	
@@ -621,35 +632,49 @@ var ItemTransportingHelper = {
 		};
 		
 		// cache block start
-		var cachedData = ItemTransportingCache.getInfo(position.x, position.y, position.z);
+		var cachedData = TransportingCache.getInfo(position.x, position.y, position.z);
 		if (!cachedData){
+			// get block
 			var pipeTile = World.getBlock(position.x, position.y, position.z).id;
+			var pipeParams = this.PipeParams[pipeTile];
 			var inPipe = this.isPipe(pipeTile);
+			// get tile entity
 			var container = World.getContainer(position.x, position.y, position.z);
 			var tileEntity = container && container.tileEntity;
-			
+			// get dirs
 			var possibleDirs = this.findBasicDirections(pipeTile, position, direction, false);
-			
+			// cache
 			cachedData = {
 				tileEntity: tileEntity,
 				container: container,
 				inPipe: inPipe,
-				possibleDirs: possibleDirs
+				possibleDirs: possibleDirs,
+				// params
+				friction: pipeParams ? pipeParams.friction : 0
 			};
-			ItemTransportingCache.registerInfo(position.x, position.y, position.z, cachedData);
+			TransportingCache.registerInfo(position.x, position.y, position.z, cachedData);
 		}
 		// cache block end
 		
 		var resultDirs = this.filterDirections(cachedData.possibleDirs, direction);
-		if (cachedData.tileEntity && cachedData.tileEntity.getTransportedItemDirs){
-			resultDirs = cachedData.tileEntity.getTransportedItemDirs(transportedItem, cachedData.possibleDirs, item, direction);
+		var acceleration = 0;
+		if (cachedData.tileEntity){
+			if (cachedData.tileEntity.getTransportedItemDirs){
+				resultDirs = cachedData.tileEntity.getTransportedItemDirs(transportedItem, cachedData.possibleDirs, item, direction);
+			}
+			if (cachedData.tileEntity.getItemAcceleration){
+				acceleration = cachedData.tileEntity.getItemAcceleration(transportedItem, cachedData.possibleDirs, item, direction);
+			}
 		}
 		
 		return {
 			inPipe: cachedData.inPipe,
 			directions: resultDirs,
 			container: cachedData.container,
-			tileEntity: cachedData.tileEntity
+			tileEntity: cachedData.tileEntity,
+			// params
+			acceleration: acceleration,
+			friction: cachedData.friction
 		};
 	}
 }
@@ -675,7 +700,9 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 		
 		/* setup pathfinding */
 		this.target = null;
-		this.velocity = .05;
+		this.velocity = .075;
+		this.acceleration = .0;
+		this.friction = .0;
 		this.direction = {
 			x: 0, 
 			y: 0, 
@@ -724,7 +751,9 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 			count: count, 
 			data: data
 		};
-		this.reloadAnimation();
+		if (id > 0){
+			this.reloadAnimation();
+		}
 	},
 	
 	setItemSource: function(item){
@@ -800,6 +829,7 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 	},
 	
 	move: function(){
+		this.velocity = Math.min(.5, Math.max(.02, this.velocity + this.acceleration - this.friction || 0));
 		if (this.target && this.velocity){
 			var delta = {
 				x: this.target.x - this.pos.x,
@@ -869,6 +899,9 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 		var directions = pathdata.directions;
 		var dir = directions[parseInt(directions.length * Math.random())];
 		
+		this.acceleration = pathdata.acceleration;
+		this.friction = pathdata.friction;
+		
 		if (pathdata.inPipe){			
 			if (!dir){
 				dir = this.direction;
@@ -904,15 +937,6 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 
 
 
-Callback.addCallback("ItemUse", function(coords, carried, block){
-	if (carried.id == 280){
-		var item = TransportingItem.deploy();
-		item.setPosition(coords.x + .5, coords.y + .5, coords.z + .5);
-		item.setItem(264, 55, 0);
-	}
-});
-
-
 var BLOCK_TYPE_ITEM_PIPE = Block.createSpecialType({
 	base: 20,
 	renderlayer: 3
@@ -935,7 +959,7 @@ var ITEM_PIPE_CONNECTION_STONE = "bc-item-pipe-stone";
 var ITEM_PIPE_CONNECTION_COBBLE = "bc-item-pipe-cobble";
 var ITEM_PIPE_CONNECTION_SANDSTONE = "bc-item-pipe-sandstone";
 
-function setupItemPipeRender(id, connectionType){
+function registerItemPipe(id, connectionType, params){
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
 	model.addConnectionGroup(PIPE_CONNECTION_ITEM_MACHINE);
@@ -950,7 +974,9 @@ function setupItemPipeRender(id, connectionType){
 		ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_SANDSTONE, id);
 	}
 	
-	ItemTransportingHelper.registerItemPipe(id, connectionType);
+	ItemTransportingHelper.registerItemPipe(id, connectionType, params);
+	
+	return model;
 }
 
 
@@ -978,12 +1004,18 @@ Block.createBlock("pipeItemSandstone", [
 
 IDRegistry.genBlockID("pipeItemIron");
 Block.createBlock("pipeItemIron", [
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: true}
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: true},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemGolden");
 Block.createBlock("pipeItemGolden", [
-	{name: "Golden Transporting Pipe", texture: [["pipe_item_gold", 0]], inCreative: true}
+	{name: "Golden Transporting Pipe", texture: [["pipe_item_gold", 0]], inCreative: true},
+	{name: "Golden Transporting Pipe", texture: [["pipe_item_gold", 1]], inCreative: false},
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemObsidian");
@@ -1011,15 +1043,24 @@ Block.setBlockShape(BlockID.pipeItemObsidian, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5
 Block.setBlockShape(BlockID.pipeItemEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemDiamond, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 
-setupItemPipeRender(BlockID.pipeItemWooden, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemCobble, ITEM_PIPE_CONNECTION_COBBLE);
-setupItemPipeRender(BlockID.pipeItemStone, ITEM_PIPE_CONNECTION_STONE);
-setupItemPipeRender(BlockID.pipeItemSandstone, ITEM_PIPE_CONNECTION_SANDSTONE);
-setupItemPipeRender(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemGolden, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemObsidian, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemEmerald, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemDiamond, ITEM_PIPE_CONNECTION_ANY);
+// register item pipes
+registerItemPipe(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemObsidian, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemEmerald, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemDiamond, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemGolden, ITEM_PIPE_CONNECTION_ANY).cloneForId(BlockID.pipeItemGolden, 1);
+registerItemPipe(BlockID.pipeItemWooden, ITEM_PIPE_CONNECTION_ANY, {
+	friction: .005
+});
+registerItemPipe(BlockID.pipeItemCobble, ITEM_PIPE_CONNECTION_COBBLE, {
+	friction: .005
+});
+registerItemPipe(BlockID.pipeItemStone, ITEM_PIPE_CONNECTION_STONE, {
+	friction: .0015
+});
+registerItemPipe(BlockID.pipeItemSandstone, ITEM_PIPE_CONNECTION_SANDSTONE, {
+	friction: .0025
+});
 
 
 
@@ -1112,6 +1153,7 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 				var transportedItem = TransportingItem.deploy();
 				transportedItem.setPosition(containerData.position.x + .5, containerData.position.y + .5, containerData.position.z + .5);
 				transportedItem.setItem(item.id, item.count, item.data);
+				transportedItem.setTarget(this.x, this.y, this.z);
 			}
 			else{
 				this.data.containerIndex++;
@@ -1166,6 +1208,22 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 		container.validateAll();
 		container.applyChanges();
 		return item;
+	}
+});
+
+
+TileEntity.registerPrototype(BlockID.pipeItemGolden, {
+	defaultValues: {
+		redstone: false,
+	},
+
+	redstone: function(signal){
+		this.data.redstone = signal.power > 8;
+		World.setBlock(this.x, this.y, this.z, World.getBlock(this.x, this.y, this.z).id, this.data.redstone ? 1 : 0);
+	},
+	
+	getItemAcceleration: function(){
+		return this.data.redstone ? 0.0025 : 0.02;
 	}
 });
 

@@ -19,6 +19,8 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 		/* setup pathfinding */
 		this.target = null;
 		this.velocity = .05;
+		this.acceleration = .0;
+		this.friction = .0;
 		this.direction = {
 			x: 0, 
 			y: 0, 
@@ -67,7 +69,9 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 			count: count, 
 			data: data
 		};
-		this.reloadAnimation();
+		if (id > 0){
+			this.reloadAnimation();
+		}
 	},
 	
 	setItemSource: function(item){
@@ -143,6 +147,7 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 	},
 	
 	move: function(){
+		this.velocity = Math.min(.5, Math.max(.02, this.velocity + this.acceleration - this.friction || 0));
 		if (this.target && this.velocity){
 			var delta = {
 				x: this.target.x - this.pos.x,
@@ -212,6 +217,9 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 		var directions = pathdata.directions;
 		var dir = directions[parseInt(directions.length * Math.random())];
 		
+		this.acceleration = pathdata.acceleration;
+		this.friction = pathdata.friction;
+		
 		if (pathdata.inPipe){			
 			if (!dir){
 				dir = this.direction;
@@ -245,12 +253,3 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 	}
 });
 
-
-
-Callback.addCallback("ItemUse", function(coords, carried, block){
-	if (carried.id == 280){
-		var item = TransportingItem.deploy();
-		item.setPosition(coords.x + .5, coords.y + .5, coords.z + .5);
-		item.setItem(264, 55, 0);
-	}
-});

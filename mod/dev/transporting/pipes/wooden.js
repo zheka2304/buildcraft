@@ -13,6 +13,7 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 				var transportedItem = TransportingItem.deploy();
 				transportedItem.setPosition(containerData.position.x + .5, containerData.position.y + .5, containerData.position.z + .5);
 				transportedItem.setItem(item.id, item.count, item.data);
+				transportedItem.setTarget(this.x, this.y, this.z);
 			}
 			else{
 				this.data.containerIndex++;

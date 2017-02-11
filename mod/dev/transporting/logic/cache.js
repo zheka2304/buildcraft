@@ -1,6 +1,6 @@
 var TRANSPORTING_CACHE_DEBUG = false;
 
-var ItemTransportingCache = {
+var TransportingCache = {
 	cache: [],
 	
 	debug: {
@@ -25,15 +25,15 @@ var ItemTransportingCache = {
 
 
 Callback.addCallback("LevelLoaded", function(){
-	ItemTransportingCache.clear();
+	TransportingCache.clear();
 });
 
 Callback.addCallback("ItemUse", function(){
-	ItemTransportingCache.clear();
+	TransportingCache.clear();
 });
 
 Callback.addCallback("DestroyBlock", function(){
-	ItemTransportingCache.clear();
+	TransportingCache.clear();
 });
 
 
@@ -41,25 +41,25 @@ Callback.addCallback("DestroyBlock", function(){
  * Debug output
 */
 if (TRANSPORTING_CACHE_DEBUG){
-	ItemTransportingCache.registerInfo = function(x, y, z, info){
+	TransportingCache.registerInfo = function(x, y, z, info){
 		this.debug.overrides++;
 		var key = x + "." + y + "." + z;
 		this.cache[key] = info;
 	};
 	
-	ItemTransportingCache.getInfo = function(x, y, z, info){
+	TransportingCache.getInfo = function(x, y, z, info){
 		this.debug.calls++;
 		var key = x + "." + y + "." + z;
 		return this.cache[key];
 	};
 	
-	ItemTransportingCache.debugTick = function(){
+	TransportingCache.debugTick = function(){
 		Game.tipMessage(JSON.stringify(this.debug, "\t"));
 		this.debug.calls = 0;
 		this.debug.overrides = 0;
 	};
 	
 	Callback.addCallback("tick", function(){
-		ItemTransportingCache.debugTick();
+		TransportingCache.debugTick();
 	});
 }

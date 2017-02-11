@@ -12,8 +12,10 @@ transporting/logic/cache.js
 transporting/logic/helper.js
 transporting/logic/saver.js
 transporting/logic/item.js
+
 transporting/pipes/block.js
 transporting/pipes/wooden.js
+transporting/pipes/golden.js
 
 energy/engine/data.js
 energy/engine/model.js

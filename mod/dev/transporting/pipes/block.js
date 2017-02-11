@@ -20,7 +20,7 @@ var ITEM_PIPE_CONNECTION_STONE = "bc-item-pipe-stone";
 var ITEM_PIPE_CONNECTION_COBBLE = "bc-item-pipe-cobble";
 var ITEM_PIPE_CONNECTION_SANDSTONE = "bc-item-pipe-sandstone";
 
-function setupItemPipeRender(id, connectionType){
+function registerItemPipe(id, connectionType, params){
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
 	model.addConnectionGroup(PIPE_CONNECTION_ITEM_MACHINE);
@@ -35,7 +35,9 @@ function setupItemPipeRender(id, connectionType){
 		ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_SANDSTONE, id);
 	}
 	
-	ItemTransportingHelper.registerItemPipe(id, connectionType);
+	ItemTransportingHelper.registerItemPipe(id, connectionType, params);
+	
+	return model;
 }
 
 
@@ -63,12 +65,18 @@ Block.createBlock("pipeItemSandstone", [
 
 IDRegistry.genBlockID("pipeItemIron");
 Block.createBlock("pipeItemIron", [
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: true}
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: true},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemGolden");
 Block.createBlock("pipeItemGolden", [
-	{name: "Golden Transporting Pipe", texture: [["pipe_item_gold", 0]], inCreative: true}
+	{name: "Golden Transporting Pipe", texture: [["pipe_item_gold", 0]], inCreative: true},
+	{name: "Golden Transporting Pipe", texture: [["pipe_item_gold", 1]], inCreative: false},
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemObsidian");
@@ -96,15 +104,24 @@ Block.setBlockShape(BlockID.pipeItemObsidian, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5
 Block.setBlockShape(BlockID.pipeItemEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemDiamond, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 
-setupItemPipeRender(BlockID.pipeItemWooden, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemCobble, ITEM_PIPE_CONNECTION_COBBLE);
-setupItemPipeRender(BlockID.pipeItemStone, ITEM_PIPE_CONNECTION_STONE);
-setupItemPipeRender(BlockID.pipeItemSandstone, ITEM_PIPE_CONNECTION_SANDSTONE);
-setupItemPipeRender(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemGolden, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemObsidian, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemEmerald, ITEM_PIPE_CONNECTION_ANY);
-setupItemPipeRender(BlockID.pipeItemDiamond, ITEM_PIPE_CONNECTION_ANY);
+// register item pipes
+registerItemPipe(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemObsidian, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemEmerald, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemDiamond, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemGolden, ITEM_PIPE_CONNECTION_ANY).cloneForId(BlockID.pipeItemGolden, 1);
+registerItemPipe(BlockID.pipeItemWooden, ITEM_PIPE_CONNECTION_ANY, {
+	friction: .001
+});
+registerItemPipe(BlockID.pipeItemCobble, ITEM_PIPE_CONNECTION_COBBLE, {
+	friction: .005
+});
+registerItemPipe(BlockID.pipeItemStone, ITEM_PIPE_CONNECTION_STONE, {
+	friction: .0015
+});
+registerItemPipe(BlockID.pipeItemSandstone, ITEM_PIPE_CONNECTION_SANDSTONE, {
+	friction: .0025
+});
 
 
 
