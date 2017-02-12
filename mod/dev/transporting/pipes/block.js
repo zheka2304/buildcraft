@@ -13,7 +13,7 @@ var PIPE_BLOCK_WIDTH = 0.25;
 
 // item pipe render setup
 
-var PIPE_CONNECTION_ITEM_MACHINE = "bc-item-pipe-mech";
+var ITEM_PIPE_CONNECTION_MACHINE = "bc-container";
 
 var ITEM_PIPE_CONNECTION_ANY = "bc-item-pipe-any";
 var ITEM_PIPE_CONNECTION_STONE = "bc-item-pipe-stone";
@@ -23,7 +23,7 @@ var ITEM_PIPE_CONNECTION_SANDSTONE = "bc-item-pipe-sandstone";
 function registerItemPipe(id, connectionType, params){
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
-	model.addConnectionGroup(PIPE_CONNECTION_ITEM_MACHINE);
+	model.addConnectionGroup(ITEM_PIPE_CONNECTION_MACHINE);
 	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
 	model.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
 	
@@ -39,6 +39,10 @@ function registerItemPipe(id, connectionType, params){
 	
 	return model;
 }
+
+ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_MACHINE, 54);
+ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_MACHINE, 61);
+ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_MACHINE, 62);
 
 
 // item pipes 
@@ -65,13 +69,17 @@ Block.createBlock("pipeItemSandstone", [
 
 IDRegistry.genBlockID("pipeItemIron");
 Block.createBlock("pipeItemIron", [
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: true},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 0]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: true},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
 ], BLOCK_TYPE_ITEM_PIPE);
+IDRegistry.genBlockID("pipeItemIronRender");
+Block.createBlock("pipeItemIronRender", [
+	{name: "tile.ironPipeRender.name", texture: [["pipe_item_iron", 0]], inCreative: false}
+]);
 
 IDRegistry.genBlockID("pipeItemGolden");
 Block.createBlock("pipeItemGolden", [
@@ -105,14 +113,12 @@ Block.setBlockShape(BlockID.pipeItemEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 
 Block.setBlockShape(BlockID.pipeItemDiamond, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 
 // register item pipes
-registerItemPipe(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemObsidian, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemEmerald, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemDiamond, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemGolden, ITEM_PIPE_CONNECTION_ANY).cloneForId(BlockID.pipeItemGolden, 1);
-registerItemPipe(BlockID.pipeItemWooden, ITEM_PIPE_CONNECTION_ANY, {
-	friction: .001
-});
+registerItemPipe(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemWooden, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemCobble, ITEM_PIPE_CONNECTION_COBBLE, {
 	friction: .005
 });
@@ -127,7 +133,7 @@ registerItemPipe(BlockID.pipeItemSandstone, ITEM_PIPE_CONNECTION_SANDSTONE, {
 
 // fluid pipe render setup
 
-var PIPE_CONNECTION_FLUID_MACHINE = "bc-fluid-pipe-mech";
+var FLUID_PIPE_CONNECTION_MACHINE = "bc-fluid";
 
 var FLUID_PIPE_CONNECTION_ANY = "bc-fluid-pipe-any";
 var FLUID_PIPE_CONNECTION_STONE = "bc-fluid-pipe-stone";
@@ -141,7 +147,7 @@ function setupFluidPipeRender(id, connectionType){
 	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
 	model.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
 	
-	ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_ANY, id);
+	ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_MACHINE, id);
 	ICRenderLib.addConnectionBlock(connectionType, id);
 	if (connectionType == FLUID_PIPE_CONNECTION_ANY){
 		ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_STONE, id);

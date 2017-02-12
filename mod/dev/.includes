@@ -15,6 +15,7 @@ transporting/logic/item.js
 
 transporting/pipes/block.js
 transporting/pipes/wooden.js
+transporting/pipes/iron.js
 transporting/pipes/golden.js
 
 energy/engine/data.js
