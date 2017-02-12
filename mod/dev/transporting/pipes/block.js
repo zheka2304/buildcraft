@@ -143,11 +143,11 @@ var FLUID_PIPE_CONNECTION_SANDSTONE = "bc-fluid-pipe-sandstone";
 function setupFluidPipeRender(id, connectionType){
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
-	model.addConnectionGroup(PIPE_CONNECTION_FLUID_MACHINE);
+	model.addConnectionGroup(FLUID_PIPE_CONNECTION_MACHINE);
 	model.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
 	model.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
 	
-	ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_MACHINE, id);
+	ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_ANY, id);
 	ICRenderLib.addConnectionBlock(connectionType, id);
 	if (connectionType == FLUID_PIPE_CONNECTION_ANY){
 		ICRenderLib.addConnectionBlock(FLUID_PIPE_CONNECTION_STONE, id);
