@@ -1,24 +1,62 @@
 
+var emeraldPipeUI = new UI.StandartWindow({
+	standart: {
+		header: {
+			text: {text: "Emerald Pipe"}
+		},
+		background: {
+			standart: true,
+		},
+		inventory: {
+			standart: true
+		}
+	},
+
+	elements: {
+		"modeSwitch": {
+			type: "button", isTextButton: true, x: 400, y: 200, bitmap: "button_36x12_up", bitmap2: "button_36x12_down", text: "Normal", scale: 6, 
+			font: {
+				color: android.graphics.Color.WHITE,
+				size: 24,
+				shadow: 0.75
+			},
+			textOffset: {
+				x: 32,
+				y: 45
+			},
+			clicker: {
+				onClick: function(container, tileEntity){
+					tileEntity.data.inverseMode = !tileEntity.data.inverseMode;
+				}
+			}
+		}
+	}
+});
+
 
 TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 	defaultValues: {
 		containerIndex: 0,
+		inverseMode: false
 	},
 	
 	getGuiScreen: function(){
-		
+		return emeraldPipeUI;
 	},
 	
+	tick: function(){
+		this.container.setText("modeSwitch", this.data.inverseMode ? "Inveresed" : "Normal");
+	},
 	
 	MJEnergyDeploy: function(amount, generator, params){
 		var containerData = this.findContainer();
 		if (containerData && containerData.container){
 			var item = this.getItemFrom(containerData.container, amount >= 8 ? amount * 8 : 1);
 			if (item){
-				var transportedItem = new TransportingItem();
+				var transportedItem = TransportingItem.deploy();
 				transportedItem.setPosition(containerData.position.x + .5, containerData.position.y + .5, containerData.position.z + .5);
 				transportedItem.setItem(item.id, item.count, item.data);
-				transportedItem.load();
+				transportedItem.setTarget(this.x, this.y, this.z);
 			}
 			else{
 				this.data.containerIndex++;
@@ -27,7 +65,7 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 	},
 	
 	findContainer: function(){
-		var directions = TransportingHelper.findNearbyContainers(this);
+		var directions = ItemTransportingHelper.findNearbyContainers(this);
 		var dir = directions[this.data.containerIndex % directions.length];
 		
 		if (dir){

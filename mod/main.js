@@ -1218,6 +1218,123 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 });
 
 
+
+var emeraldPipeUI = new UI.StandartWindow({
+	standart: {
+		header: {
+			text: {text: "Emerald Pipe"}
+		},
+		background: {
+			standart: true,
+		},
+		inventory: {
+			standart: true
+		}
+	},
+
+	elements: {
+		"modeSwitch": {
+			type: "button", isTextButton: true, x: 400, y: 200, bitmap: "button_36x12_up", bitmap2: "button_36x12_down", text: "Normal", scale: 6, 
+			font: {
+				color: android.graphics.Color.WHITE,
+				size: 24,
+				shadow: 0.75
+			},
+			textOffset: {
+				x: 32,
+				y: 45
+			},
+			clicker: {
+				onClick: function(container, tileEntity){
+					tileEntity.data.inverseMode = !tileEntity.data.inverseMode;
+				}
+			}
+		}
+	}
+});
+
+
+TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
+	defaultValues: {
+		containerIndex: 0,
+		inverseMode: false
+	},
+	
+	getGuiScreen: function(){
+		return emeraldPipeUI;
+	},
+	
+	tick: function(){
+		this.container.setText("modeSwitch", this.data.inverseMode ? "Inveresed" : "Normal");
+	},
+	
+	MJEnergyDeploy: function(amount, generator, params){
+		var containerData = this.findContainer();
+		if (containerData && containerData.container){
+			var item = this.getItemFrom(containerData.container, amount >= 8 ? amount * 8 : 1);
+			if (item){
+				var transportedItem = TransportingItem.deploy();
+				transportedItem.setPosition(containerData.position.x + .5, containerData.position.y + .5, containerData.position.z + .5);
+				transportedItem.setItem(item.id, item.count, item.data);
+				transportedItem.setTarget(this.x, this.y, this.z);
+			}
+			else{
+				this.data.containerIndex++;
+			}
+		}
+	},
+	
+	findContainer: function(){
+		var directions = ItemTransportingHelper.findNearbyContainers(this);
+		var dir = directions[this.data.containerIndex % directions.length];
+		
+		if (dir){
+			var container = World.getContainer(this.x + dir.x, this.y + dir.y, this.z + dir.z);
+			return {
+				container: container,
+				direction: dir,
+				position: {x: this.x + dir.x, y: this.y + dir.y, z: this.z + dir.z}
+			};
+		}
+	},
+	
+	getItemFrom: function(container, maxCount){
+		container.refreshSlots();
+		var tileEntity = container.tileEntity;
+		var slots = [];
+		var slotsInitialized = false;
+		if (tileEntity){
+			if (tileEntity.getTransportedItem){
+				tileEntity.getTransportedItem();
+			}
+			if (tileEntity.getTransportSlots){
+				slots = tileEntity.getTransportSlots().ouput || [];
+				slotsInitialized = true;
+			}
+		}
+		if (!slotsInitialized){
+			for (var name in container.slots){
+				slots.push(name);
+			}
+		}
+		
+		var item = null;
+		for (var i in slots){
+			var slot = container.getSlot(slots[i]);
+			if (slot.id > 0){
+				var count = Math.min(maxCount, slot.count);
+				item = {id: slot.id, count: count, data: slot.data};
+				slot.count -= count;
+				break;
+			}
+		}
+		container.validateAll();
+		container.applyChanges();
+		return item;
+	}
+});
+
+
 // const
 var IRON_PIPE_DIRECTIONS = [
 	{x: 0, y: -1, z: 0},
@@ -1228,36 +1345,33 @@ var IRON_PIPE_DIRECTIONS = [
 	{x: 1, y: 0, z: 0},
 ];
 
+var IRON_PIPE_MODEL_BOXES = [
+	[0.5 - PIPE_BLOCK_WIDTH, 0.0, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH],
+	[0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 1.0, 0.5 + PIPE_BLOCK_WIDTH],
+	[0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.0, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH],
+	[0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 1.0],
+	[0.0, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH],
+	[0.5 + PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 1.0, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH],
+];
+
 // init renderer
 Callback.addCallback("PreLoaded", function(){
-	var swapToMax = function(array, index1, index2){
-		if (array[index1] > array[index2]){
-			var temp = array[index2];
-			array[index2] = array[index1];
-			array[index1] = temp;
-		}
-	}
-	
 	for (var data in IRON_PIPE_DIRECTIONS){
 		var ironPipeRender = new TileRenderModel(BlockID.pipeItemIron, data);
-		var dir = IRON_PIPE_DIRECTIONS[data];
-		ironPipeRender.addConnectionGroup(ITEM_PIPE_CONNECTION_ANY);
-		ironPipeRender.addConnectionGroup(ITEM_PIPE_CONNECTION_MACHINE);
-		ironPipeRender.setConnectionWidth(PIPE_BLOCK_WIDTH * 2);
-		
-		var box = [
-			dir.x == 0 ? PIPE_BLOCK_WIDTH / 2 : dir.x * 0.5 + 0.5,
-			dir.x == 0 ? PIPE_BLOCK_WIDTH / 2 : 0.5 + PIPE_BLOCK_WIDTH / 2 * dir.x,
-			dir.y == 0 ? PIPE_BLOCK_WIDTH / 2 : dir.y * 0.5 + 0.5,
-			dir.y == 0 ? PIPE_BLOCK_WIDTH / 2 : 0.5 + PIPE_BLOCK_WIDTH / 2 * dir.y,
-			dir.z == 0 ? PIPE_BLOCK_WIDTH / 2 : dir.z * 0.5 + 0.5,
-			dir.z == 0 ? PIPE_BLOCK_WIDTH / 2 : 0.5 + PIPE_BLOCK_WIDTH / 2 * dir.z,
-		];
-		swapToMax(box, 0, 1);
-		swapToMax(box, 2, 3);
-		swapToMax(box, 4, 5);
-		
-		ironPipeRender.addBoxF(box[0], box[1], box[2], box[3], box[4], box[5], {id: BlockID.pipeItemIronRender, data: 0});
+		for(var i in IRON_PIPE_MODEL_BOXES){
+			var box = IRON_PIPE_MODEL_BOXES[i];
+			var dir = IRON_PIPE_DIRECTIONS[i];
+			if(i == data){
+				ironPipeRender.addBoxF(box[0], box[1], box[2], box[3], box[4], box[5], {id: BlockID.pipeItemIronRender, data: 0});
+			}
+			else{
+				var condition = ironPipeRender.createCondition(dir.x, dir.y, dir.z);
+				condition.addBoxF(box[0], box[1], box[2], box[3], box[4], box[5]);
+				condition.addBlockGroup(ITEM_PIPE_CONNECTION_ANY);
+				condition.addBlockGroup(ITEM_PIPE_CONNECTION_MACHINE);
+			}
+		}
+		ironPipeRender.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
 	}
 });
 
@@ -1270,24 +1384,23 @@ TileEntity.registerPrototype(BlockID.pipeItemIron, {
 		this.data.direction = dir % 6 || 0;
 		World.setBlock(this.x, this.y, this.z, World.getBlock(this.x, this.y, this.z).id, this.data.direction);
 	},
-	
+
 	created: function(){
 		this.setDirection(1);
 	},
-	
+
 	click: function(id, count, data){
 		if (id == ItemID.bcWrench){
 			this.setDirection(this.data.direction + 1);
 		}
 	},
-	
+
 	getTransportedItemDirs: function(){
 		return [
 			IRON_PIPE_DIRECTIONS[this.data.direction]
 		];
 	}
 });
-
 
 
 TileEntity.registerPrototype(BlockID.pipeItemGolden, {
