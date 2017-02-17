@@ -149,10 +149,10 @@ var ItemTransportingHelper = {
 		var acceleration = 0;
 		if (cachedData.tileEntity){
 			if (cachedData.tileEntity.getTransportedItemDirs){
-				resultDirs = cachedData.tileEntity.getTransportedItemDirs(transportedItem, cachedData.possibleDirs, item, direction);
+				resultDirs = cachedData.tileEntity.getTransportedItemDirs(transportedItem, cachedData.possibleDirs, item, direction, resultDirs);
 			}
 			if (cachedData.tileEntity.getItemAcceleration){
-				acceleration = cachedData.tileEntity.getItemAcceleration(transportedItem, cachedData.possibleDirs, item, direction);
+				acceleration = cachedData.tileEntity.getItemAcceleration(transportedItem, cachedData.possibleDirs, item, direction, resultDirs);
 			}
 		}
 		

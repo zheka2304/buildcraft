@@ -18,6 +18,7 @@ transporting/pipes/wooden.js
 transporting/pipes/emerald.js
 transporting/pipes/iron.js
 transporting/pipes/golden.js
+transporting/pipes/diamond.js
 
 energy/engine/data.js
 energy/engine/model.js

@@ -660,10 +660,10 @@ var ItemTransportingHelper = {
 		var acceleration = 0;
 		if (cachedData.tileEntity){
 			if (cachedData.tileEntity.getTransportedItemDirs){
-				resultDirs = cachedData.tileEntity.getTransportedItemDirs(transportedItem, cachedData.possibleDirs, item, direction);
+				resultDirs = cachedData.tileEntity.getTransportedItemDirs(transportedItem, cachedData.possibleDirs, item, direction, resultDirs);
 			}
 			if (cachedData.tileEntity.getItemAcceleration){
-				acceleration = cachedData.tileEntity.getItemAcceleration(transportedItem, cachedData.possibleDirs, item, direction);
+				acceleration = cachedData.tileEntity.getItemAcceleration(transportedItem, cachedData.possibleDirs, item, direction, resultDirs);
 			}
 		}
 		
@@ -774,6 +774,19 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 		if (!this.item || this.item.count <= 0){
 			this.destroySelf();
 		}
+	},
+
+	turnBack: function(){
+		var delta = {
+			x: this.target.x - this.pos.x,
+			y: this.target.y - this.pos.y,
+			z: this.target.z - this.pos.z,
+		};
+		this.target = {
+			x: this.pos.x - delta.x,
+			y: this.pos.y - delta.y,
+			z: this.pos.z - delta.z,
+		};
 	},
 	
 	
@@ -960,6 +973,12 @@ var ITEM_PIPE_CONNECTION_COBBLE = "bc-item-pipe-cobble";
 var ITEM_PIPE_CONNECTION_SANDSTONE = "bc-item-pipe-sandstone";
 
 function registerItemPipe(id, connectionType, params){
+	/* drop func */
+	Block.registerDropFunctionForID(id, function(){
+		return [[id, 1, 0]];
+	});
+
+	/* render */
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
 	model.addConnectionGroup(ITEM_PIPE_CONNECTION_MACHINE);
@@ -974,6 +993,7 @@ function registerItemPipe(id, connectionType, params){
 		ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_SANDSTONE, id);
 	}
 	
+	/* params */
 	ItemTransportingHelper.registerItemPipe(id, connectionType, params);
 	
 	return model;
@@ -1041,6 +1061,16 @@ Block.createBlock("pipeItemDiamond", [
 	{name: "Diamond Transporting Pipe", texture: [["pipe_item_diamond", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
+IDRegistry.genBlockID("pipeItemDiamondRender");
+Block.createBlock("pipeItemDiamondRender", [
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 1]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 2]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 3]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 4]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 5]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 6]], inCreative: false}
+]);
+
 Block.setBlockShape(BlockID.pipeItemWooden, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemCobble, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemStone, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
@@ -1080,6 +1110,12 @@ var FLUID_PIPE_CONNECTION_COBBLE = "bc-fluid-pipe-cobble";
 var FLUID_PIPE_CONNECTION_SANDSTONE = "bc-fluid-pipe-sandstone";
 
 function setupFluidPipeRender(id, connectionType){
+	/* drop func */
+	Block.registerDropFunctionForID(id, function(){
+		return [[id, 1, 0]];
+	});
+
+	/* render */
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
 	model.addConnectionGroup(FLUID_PIPE_CONNECTION_MACHINE);
@@ -1149,7 +1185,9 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 		containerIndex: 0,
 	},
 	
-	
+	getTransportSlots: function(){
+		return {};
+	},
 	
 	MJEnergyDeploy: function(amount, generator, params){
 		var containerData = this.findContainer();
@@ -1222,7 +1260,7 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 var emeraldPipeUI = new UI.StandartWindow({
 	standart: {
 		header: {
-			text: {text: "Emerald Pipe"}
+			text: {text: "Emerald Transporting Pipe"}
 		},
 		background: {
 			standart: true,
@@ -1234,14 +1272,14 @@ var emeraldPipeUI = new UI.StandartWindow({
 
 	elements: {
 		"modeSwitch": {
-			type: "button", isTextButton: true, x: 400, y: 200, bitmap: "button_36x12_up", bitmap2: "button_36x12_down", text: "Normal", scale: 6, 
+			type: "button", isTextButton: true, x: 380, y: 200, bitmap: "button_36x12_up", bitmap2: "button_36x12_down", text: "Filter", scale: 6, 
 			font: {
 				color: android.graphics.Color.WHITE,
 				size: 24,
 				shadow: 0.75
 			},
 			textOffset: {
-				x: 32,
+				x: 48,
 				y: 45
 			},
 			clicker: {
@@ -1253,6 +1291,13 @@ var emeraldPipeUI = new UI.StandartWindow({
 	}
 });
 
+for (var i = 0; i < 9; i++){
+	emeraldPipeUI.content.elements["slot" + i] = {
+		type: "slot",
+		x: 370 + i * 65, y: 285
+	};
+}
+
 
 TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 	defaultValues: {
@@ -1260,14 +1305,22 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 		inverseMode: false
 	},
 	
+	/* callbacks */
 	getGuiScreen: function(){
 		return emeraldPipeUI;
 	},
-	
+
 	tick: function(){
-		this.container.setText("modeSwitch", this.data.inverseMode ? "Inveresed" : "Normal");
+		if (this.container.isOpened()){
+			this.reloadFilter();
+			this.container.setText("modeSwitch", this.data.inverseMode ? "Ignore" : "Filter");
+		}
 	},
 	
+	getTransportSlots: function(){
+		return {};
+	},
+
 	MJEnergyDeploy: function(amount, generator, params){
 		var containerData = this.findContainer();
 		if (containerData && containerData.container){
@@ -1284,6 +1337,36 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 		}
 	},
 	
+	/* logic */
+	reloadFilter: function(){
+		this.filter = {
+			all: true
+		};
+		this.container.validateAll();
+
+		for (var i = 0; i < 9; i++){
+			var slot = this.container.getSlot("slot" + i);
+			if (slot.id > 0){
+				this.filter[slot.id + "." + slot.data] = true;
+				this.filter.all = false;
+			}
+		}
+	},
+
+	checkItem: function(id, data){
+		if (this.filter){
+			if (this.data.inverseMode){
+				return this.filter.all || !this.filter[id + "." + data];
+			}
+			else{
+				return this.filter.all || this.filter[id + "." + data];
+			}
+		}
+		else{
+			return true;
+		}
+	},
+
 	findContainer: function(){
 		var directions = ItemTransportingHelper.findNearbyContainers(this);
 		var dir = directions[this.data.containerIndex % directions.length];
@@ -1298,7 +1381,7 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 		}
 	},
 	
-	getItemFrom: function(container, maxCount){
+	getItemFrom: function(container, maxCount, filter){
 		container.refreshSlots();
 		var tileEntity = container.tileEntity;
 		var slots = [];
@@ -1321,7 +1404,7 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 		var item = null;
 		for (var i in slots){
 			var slot = container.getSlot(slots[i]);
-			if (slot.id > 0){
+			if (slot.id > 0 && this.checkItem(slot.id, slot.data)){
 				var count = Math.min(maxCount, slot.count);
 				item = {id: slot.id, count: count, data: slot.data};
 				slot.count -= count;
@@ -1415,6 +1498,168 @@ TileEntity.registerPrototype(BlockID.pipeItemGolden, {
 	
 	getItemAcceleration: function(){
 		return this.data.redstone ? 0.0025 : 0.02;
+	}
+});
+
+
+var DIAMOND_PIPE_COLORS = {
+	BLACK: {slot: "black", data: 0},
+	YELLOW: {slot: "yellow", data: 1},
+	RED: {slot: "red", data: 2},
+	BLUE: {slot: "blue", data: 3},
+	WHITE: {slot: "white", data: 4},
+	GREEN: {slot: "green", data: 5}
+};
+
+var DIAMOND_PIPE_DIRECTIONS = [
+	{x: 0, y: -1, z: 0, type: DIAMOND_PIPE_COLORS.BLACK},
+	{x: 0, y: 1, z: 0, type: DIAMOND_PIPE_COLORS.WHITE},
+	{x: 0, y: 0, z: -1, type: DIAMOND_PIPE_COLORS.RED},
+	{x: 0, y: 0, z: 1, type: DIAMOND_PIPE_COLORS.BLUE},
+	{x: -1, y: 0, z: 0, type: DIAMOND_PIPE_COLORS.YELLOW},
+	{x: 1, y: 0, z: 0, type: DIAMOND_PIPE_COLORS.GREEN}
+];
+
+var DIAMOND_PIPE_MODEL_BOXES = [
+	[0.5 - PIPE_BLOCK_WIDTH, 0.0, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH],
+	[0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 1.0, 0.5 + PIPE_BLOCK_WIDTH],
+	[0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.0, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH],
+	[0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 1.0],
+	[0.0, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH],
+	[0.5 + PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 1.0, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH],
+];
+
+// init renderer
+Callback.addCallback("PreLoaded", function(){
+	var diamondPipeRenderer = new TileRenderModel(BlockID.pipeItemDiamond, 0);
+	for(var i in DIAMOND_PIPE_DIRECTIONS){
+		var box = DIAMOND_PIPE_MODEL_BOXES[i];
+		var dir = DIAMOND_PIPE_DIRECTIONS[i];
+		
+		var condition = diamondPipeRenderer.createCondition(dir.x, dir.y, dir.z);
+		condition.addBoxF(box[0], box[1], box[2], box[3], box[4], box[5], {id: BlockID.pipeItemDiamondRender, data: dir.type.data});
+		condition.addBlockGroup(ITEM_PIPE_CONNECTION_ANY);
+		condition.addBlockGroup(ITEM_PIPE_CONNECTION_MACHINE);
+	}
+	diamondPipeRenderer.addBoxF(0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 - PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH, 0.5 + PIPE_BLOCK_WIDTH);
+});
+
+var diamondPipeUI = new UI.StandartWindow({
+	standart: {
+		header: {
+			text: {text: "Diamond Transporting Pipe"}
+		}, 
+		background: {
+			standart: true,
+		},
+		inventory: {
+			standart: true
+		}
+	},
+
+	elements: {
+		
+	}
+});
+
+for (var i in DIAMOND_PIPE_DIRECTIONS){
+	var type = DIAMOND_PIPE_DIRECTIONS[i].type;
+	for (var j = 0; j < 9; j++){
+		diamondPipeUI.content.elements["slot_" + i + "_" + j] = {
+			type: "slot",
+			bitmap: "diamond_pipe_slot_" + type.slot,
+			x: 370 + j * 65, y: 80 + i * 65
+		};
+	};
+}
+
+TileEntity.registerPrototype(BlockID.pipeItemDiamond, {
+	defaultValues: {
+		containerIndex: 0,
+		inverseMode: false
+	},
+	
+	/* callbacks */
+	getGuiScreen: function(){
+		return diamondPipeUI;
+	},
+
+	tick: function(){
+		this.reloadFilter();
+	},
+	
+	getTransportSlots: function(){
+		return {};
+	},
+
+	
+	
+	/* logic */
+	reloadFilter: function(){
+		this.filter = {};
+		this.container.validateAll();
+
+		for (var i in DIAMOND_PIPE_DIRECTIONS){
+			this.filter[i] = {
+				all: true
+			};
+			for (var j = 0; j < 9; j++){
+				var slot = this.container.getSlot("slot_" + i + "_" + j);
+				if (slot.id > 0){
+					this.filter[i][slot.id + "." + slot.data] = true;
+					this.filter[i].all = false;
+				}
+			}
+		}
+	},
+
+	checkItem: function(id, data){
+		if (this.filter){
+			if (this.data.inverseMode){
+				return this.filter.all || !this.filter[id + "." + data];
+			}
+			else{
+				return this.filter.all || this.filter[id + "." + data];
+			}
+		}
+		else{
+			return true;
+		}
+	},
+
+	getTransportedItemDirs: function(transportedItem, possibleDirs, item, direction, resDirs){
+		var priorityDirections = [];
+		var otherDirections = [];
+
+		var addDir = function(array, dir){
+			for (var i in possibleDirs){
+				var dir2 = possibleDirs[i];
+				if (dir.x == dir2.x && dir.y == dir2.y && dir.z == dir2.z && !(dir.x == -direction.x && dir.y == -direction.y && dir.z == -direction.z)){
+					array.push(dir);
+					break;
+				}
+			}
+		}
+
+		for (var i in DIAMOND_PIPE_DIRECTIONS){
+			var dir = DIAMOND_PIPE_DIRECTIONS[i];
+			if (this.filter[i][item.id + "." + item.data]){
+				addDir(priorityDirections, dir);
+			}
+			else if (this.filter[i].all){
+				addDir(otherDirections, dir);
+			}
+		}
+
+		var directions = priorityDirections.length > 0 ? priorityDirections : otherDirections;
+
+		if (directions.length == 0){
+			return [
+				{x: -direction.x, y: -direction.y, z: -direction.z}
+			];
+		}
+
+		return directions;
 	}
 });
 

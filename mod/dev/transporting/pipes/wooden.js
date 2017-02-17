@@ -3,7 +3,9 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 		containerIndex: 0,
 	},
 	
-	
+	getTransportSlots: function(){
+		return {};
+	},
 	
 	MJEnergyDeploy: function(amount, generator, params){
 		var containerData = this.findContainer();

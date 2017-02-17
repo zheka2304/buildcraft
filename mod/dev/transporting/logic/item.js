@@ -93,6 +93,19 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 			this.destroySelf();
 		}
 	},
+
+	turnBack: function(){
+		var delta = {
+			x: this.target.x - this.pos.x,
+			y: this.target.y - this.pos.y,
+			z: this.target.z - this.pos.z,
+		};
+		this.target = {
+			x: this.pos.x - delta.x,
+			y: this.pos.y - delta.y,
+			z: this.pos.z - delta.z,
+		};
+	},
 	
 	
 	/* animation */

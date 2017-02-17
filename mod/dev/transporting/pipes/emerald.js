@@ -2,7 +2,7 @@
 var emeraldPipeUI = new UI.StandartWindow({
 	standart: {
 		header: {
-			text: {text: "Emerald Pipe"}
+			text: {text: "Emerald Transporting Pipe"}
 		},
 		background: {
 			standart: true,
@@ -14,14 +14,14 @@ var emeraldPipeUI = new UI.StandartWindow({
 
 	elements: {
 		"modeSwitch": {
-			type: "button", isTextButton: true, x: 400, y: 200, bitmap: "button_36x12_up", bitmap2: "button_36x12_down", text: "Normal", scale: 6, 
+			type: "button", isTextButton: true, x: 380, y: 200, bitmap: "button_36x12_up", bitmap2: "button_36x12_down", text: "Filter", scale: 6, 
 			font: {
 				color: android.graphics.Color.WHITE,
 				size: 24,
 				shadow: 0.75
 			},
 			textOffset: {
-				x: 32,
+				x: 48,
 				y: 45
 			},
 			clicker: {
@@ -33,6 +33,13 @@ var emeraldPipeUI = new UI.StandartWindow({
 	}
 });
 
+for (var i = 0; i < 9; i++){
+	emeraldPipeUI.content.elements["slot" + i] = {
+		type: "slot",
+		x: 370 + i * 65, y: 285
+	};
+}
+
 
 TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 	defaultValues: {
@@ -40,14 +47,22 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 		inverseMode: false
 	},
 	
+	/* callbacks */
 	getGuiScreen: function(){
 		return emeraldPipeUI;
 	},
-	
+
 	tick: function(){
-		this.container.setText("modeSwitch", this.data.inverseMode ? "Inveresed" : "Normal");
+		if (this.container.isOpened()){
+			this.reloadFilter();
+			this.container.setText("modeSwitch", this.data.inverseMode ? "Ignore" : "Filter");
+		}
 	},
 	
+	getTransportSlots: function(){
+		return {};
+	},
+
 	MJEnergyDeploy: function(amount, generator, params){
 		var containerData = this.findContainer();
 		if (containerData && containerData.container){
@@ -64,6 +79,36 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 		}
 	},
 	
+	/* logic */
+	reloadFilter: function(){
+		this.filter = {
+			all: true
+		};
+		this.container.validateAll();
+
+		for (var i = 0; i < 9; i++){
+			var slot = this.container.getSlot("slot" + i);
+			if (slot.id > 0){
+				this.filter[slot.id + "." + slot.data] = true;
+				this.filter.all = false;
+			}
+		}
+	},
+
+	checkItem: function(id, data){
+		if (this.filter){
+			if (this.data.inverseMode){
+				return this.filter.all || !this.filter[id + "." + data];
+			}
+			else{
+				return this.filter.all || this.filter[id + "." + data];
+			}
+		}
+		else{
+			return true;
+		}
+	},
+
 	findContainer: function(){
 		var directions = ItemTransportingHelper.findNearbyContainers(this);
 		var dir = directions[this.data.containerIndex % directions.length];
@@ -78,7 +123,7 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 		}
 	},
 	
-	getItemFrom: function(container, maxCount){
+	getItemFrom: function(container, maxCount, filter){
 		container.refreshSlots();
 		var tileEntity = container.tileEntity;
 		var slots = [];
@@ -101,7 +146,7 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 		var item = null;
 		for (var i in slots){
 			var slot = container.getSlot(slots[i]);
-			if (slot.id > 0){
+			if (slot.id > 0 && this.checkItem(slot.id, slot.data)){
 				var count = Math.min(maxCount, slot.count);
 				item = {id: slot.id, count: count, data: slot.data};
 				slot.count -= count;

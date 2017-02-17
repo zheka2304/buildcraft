@@ -21,6 +21,12 @@ var ITEM_PIPE_CONNECTION_COBBLE = "bc-item-pipe-cobble";
 var ITEM_PIPE_CONNECTION_SANDSTONE = "bc-item-pipe-sandstone";
 
 function registerItemPipe(id, connectionType, params){
+	/* drop func */
+	Block.registerDropFunctionForID(id, function(){
+		return [[id, 1, 0]];
+	});
+
+	/* render */
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
 	model.addConnectionGroup(ITEM_PIPE_CONNECTION_MACHINE);
@@ -35,6 +41,7 @@ function registerItemPipe(id, connectionType, params){
 		ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_SANDSTONE, id);
 	}
 	
+	/* params */
 	ItemTransportingHelper.registerItemPipe(id, connectionType, params);
 	
 	return model;
@@ -102,6 +109,16 @@ Block.createBlock("pipeItemDiamond", [
 	{name: "Diamond Transporting Pipe", texture: [["pipe_item_diamond", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
+IDRegistry.genBlockID("pipeItemDiamondRender");
+Block.createBlock("pipeItemDiamondRender", [
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 1]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 2]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 3]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 4]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 5]], inCreative: false},
+	{name: "tile.diamondPipeRender.name", texture: [["pipe_item_diamond", 6]], inCreative: false}
+]);
+
 Block.setBlockShape(BlockID.pipeItemWooden, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemCobble, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemStone, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
@@ -141,6 +158,12 @@ var FLUID_PIPE_CONNECTION_COBBLE = "bc-fluid-pipe-cobble";
 var FLUID_PIPE_CONNECTION_SANDSTONE = "bc-fluid-pipe-sandstone";
 
 function setupFluidPipeRender(id, connectionType){
+	/* drop func */
+	Block.registerDropFunctionForID(id, function(){
+		return [[id, 1, 0]];
+	});
+
+	/* render */
 	var model = new TileRenderModel(id, 0);
 	model.addConnectionGroup(connectionType);
 	model.addConnectionGroup(FLUID_PIPE_CONNECTION_MACHINE);
