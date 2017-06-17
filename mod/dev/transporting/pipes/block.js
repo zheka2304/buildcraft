@@ -56,32 +56,32 @@ ICRenderLib.addConnectionBlock(ITEM_PIPE_CONNECTION_MACHINE, 62);
 
 IDRegistry.genBlockID("pipeItemWooden");
 Block.createBlock("pipeItemWooden", [
-	{name: "Wooden Transporting Pipe", texture: [["pipe_item_wood", 0]], inCreative: true}
+	{name: "Wooden Transport Pipe", texture: [["pipe_item_wood", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemCobble");
 Block.createBlock("pipeItemCobble", [
-	{name: "Cobblestone Transporting Pipe", texture: [["pipe_item_cobble", 0]], inCreative: true}
+	{name: "Cobblestone Transport Pipe", texture: [["pipe_item_cobble", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemStone");
 Block.createBlock("pipeItemStone", [
-	{name: "Stone Transporting Pipe", texture: [["pipe_item_stone", 0]], inCreative: true}
+	{name: "Stone Transport Pipe", texture: [["pipe_item_stone", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemSandstone");
 Block.createBlock("pipeItemSandstone", [
-	{name: "Sandstone Transporting Pipe", texture: [["pipe_item_sandstone", 0]], inCreative: true}
+	{name: "Sandstone Transport Pipe", texture: [["pipe_item_sandstone", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemIron");
 Block.createBlock("pipeItemIron", [
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: true},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
-	{name: "Iron Transporting Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transport Pipe", texture: [["pipe_item_iron", 1]], inCreative: true},
+	{name: "Iron Transport Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transport Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transport Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transport Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
+	{name: "Iron Transport Pipe", texture: [["pipe_item_iron", 1]], inCreative: false},
 ], BLOCK_TYPE_ITEM_PIPE);
 IDRegistry.genBlockID("pipeItemIronRender");
 Block.createBlock("pipeItemIronRender", [
@@ -90,23 +90,23 @@ Block.createBlock("pipeItemIronRender", [
 
 IDRegistry.genBlockID("pipeItemGolden");
 Block.createBlock("pipeItemGolden", [
-	{name: "Golden Transporting Pipe", texture: [["pipe_item_gold", 0]], inCreative: true},
-	{name: "Golden Transporting Pipe", texture: [["pipe_item_gold", 1]], inCreative: false},
+	{name: "Golden Transport Pipe", texture: [["pipe_item_gold", 0]], inCreative: true},
+	{name: "Golden Transport Pipe", texture: [["pipe_item_gold", 1]], inCreative: false},
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemObsidian");
 Block.createBlock("pipeItemObsidian", [
-	{name: "Obsidian Transporting Pipe", texture: [["pipe_item_obsidian", 0]], inCreative: true}
+	{name: "Obsidian Transport Pipe", texture: [["pipe_item_obsidian", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemEmerald");
 Block.createBlock("pipeItemEmerald", [
-	{name: "Emerald Transporting Pipe", texture: [["pipe_item_emerald", 0]], inCreative: true}
+	{name: "Emerald Transport Pipe", texture: [["pipe_item_emerald", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemDiamond");
 Block.createBlock("pipeItemDiamond", [
-	{name: "Diamond Transporting Pipe", texture: [["pipe_item_diamond", 0]], inCreative: true}
+	{name: "Diamond Transport Pipe", texture: [["pipe_item_diamond", 0]], inCreative: true}
 ], BLOCK_TYPE_ITEM_PIPE);
 
 IDRegistry.genBlockID("pipeItemDiamondRender");
@@ -129,12 +129,22 @@ Block.setBlockShape(BlockID.pipeItemObsidian, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5
 Block.setBlockShape(BlockID.pipeItemEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeItemDiamond, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 
+Recipes.addShaped({id: BlockID.pipeItemWooden, count: 1, data: 0}, ["xax"], ['x', 5, -1, 'a', 20, -1]);
+Recipes.addShaped({id: BlockID.pipeItemCobble, count: 1, data: 0}, ["xax"], ['x', 4, -1, 'a', 20, -1]);
+Recipes.addShaped({id: BlockID.pipeItemStone, count: 1, data: 0}, ["xax"], ['x', 1, 0, 'a', 20, -1]);
+Recipes.addShaped({id: BlockID.pipeItemSandstone, count: 1, data: 0}, ["xax"], ['x', 24, 0, 'a', 20, -1]);
+Recipes.addShaped({id: BlockID.pipeItemIron, count: 1, data: 0}, ["xax"], ['x', 265, 0, 'a', 20, -1]);
+Recipes.addShaped({id: BlockID.pipeItemGolden, count: 1, data: 0}, ["xax"], ['x', 266, 0, 'a', 20, -1]);
+Recipes.addShaped({id: BlockID.pipeItemObsidian, count: 1, data: 0}, ["xax"], ['x', 49, -1, 'a', 20, -1]);
+Recipes.addShaped({id: BlockID.pipeItemEmerald, count: 1, data: 0}, ["xax"], ['x', 388, 0, 'a', 20, -1]);
+Recipes.addShaped({id: BlockID.pipeItemDiamond, count: 1, data: 0}, ["xax"], ['x', 264, 0, 'a', 20, -1]);
+
 // register item pipes
+registerItemPipe(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
+registerItemPipe(BlockID.pipeItemGolden, ITEM_PIPE_CONNECTION_ANY).cloneForId(BlockID.pipeItemGolden, 1);
 registerItemPipe(BlockID.pipeItemObsidian, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemEmerald, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemDiamond, ITEM_PIPE_CONNECTION_ANY);
-registerItemPipe(BlockID.pipeItemGolden, ITEM_PIPE_CONNECTION_ANY).cloneForId(BlockID.pipeItemGolden, 1);
-registerItemPipe(BlockID.pipeItemIron, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemWooden, ITEM_PIPE_CONNECTION_ANY);
 registerItemPipe(BlockID.pipeItemCobble, ITEM_PIPE_CONNECTION_COBBLE, {
 	friction: .005
@@ -212,13 +222,19 @@ Block.createBlock("pipeFluidEmerald", [
 	{name: "Emerald Fluid Pipe", texture: [["pipe_fluid_emerald", 0]], inCreative: true}
 ], BLOCK_TYPE_LIQUID_PIPE);
 
-
 Block.setBlockShape(BlockID.pipeFluidWooden, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeFluidCobble, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeFluidStone, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeFluidIron, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeFluidGolden, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
 Block.setBlockShape(BlockID.pipeFluidEmerald, {x: 0.5 - PIPE_BLOCK_WIDTH, y: 0.5 - PIPE_BLOCK_WIDTH, z: 0.5 - PIPE_BLOCK_WIDTH}, {x: 0.5 + PIPE_BLOCK_WIDTH, y: 0.5 + PIPE_BLOCK_WIDTH, z: 0.5 + PIPE_BLOCK_WIDTH});
+
+Recipes.addShapeless({id: BlockID.pipeFluidWooden, count: 1, data: 0}, [{id: ItemID.pipeSealant, data: 0}, {id: BlockID.pipeItemWooden, data: 0}]);
+Recipes.addShapeless({id: BlockID.pipeFluidCobble, count: 1, data: 0}, [{id: ItemID.pipeSealant, data: 0}, {id: BlockID.pipeItemCobble, data: 0}]);
+Recipes.addShapeless({id: BlockID.pipeFluidStone, count: 1, data: 0}, [{id: ItemID.pipeSealant, data: 0}, {id: BlockID.pipeItemStone, data: 0}]);
+Recipes.addShapeless({id: BlockID.pipeFluidIron, count: 1, data: 0}, [{id: ItemID.pipeSealant, data: 0}, {id: BlockID.pipeItemIron, data: -1}]);
+Recipes.addShapeless({id: BlockID.pipeFluidGolden, count: 1, data: 0}, [{id: ItemID.pipeSealant, data: 0}, {id: BlockID.pipeItemGolden, data: -1}]);
+Recipes.addShapeless({id: BlockID.pipeFluidEmerald, count: 1, data: 0}, [{id: ItemID.pipeSealant, data: 0}, {id: BlockID.pipeItemEmerald, data: 0}]);
 
 setupFluidPipeRender(BlockID.pipeFluidWooden, FLUID_PIPE_CONNECTION_ANY);
 setupFluidPipeRender(BlockID.pipeFluidCobble, FLUID_PIPE_CONNECTION_COBBLE);

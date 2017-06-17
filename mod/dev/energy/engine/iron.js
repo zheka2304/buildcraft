@@ -1,6 +1,6 @@
 var guiIronEngine = new UI.StandartWindow({
 	standart: {
-		header: {text: {text: "ICE"}},
+		header: {text: {text: "Combustion Engine"}},
 		inventory: {standart: true},
 		background: {standart: true}
 	},

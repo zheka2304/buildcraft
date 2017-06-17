@@ -133,7 +133,7 @@ TileEntity.registerPrototype(BlockID.pipeItemEmerald, {
 				tileEntity.getTransportedItem();
 			}
 			if (tileEntity.getTransportSlots){
-				slots = tileEntity.getTransportSlots().ouput || [];
+				slots = tileEntity.getTransportSlots().output || [];
 				slotsInitialized = true;
 			}
 		}

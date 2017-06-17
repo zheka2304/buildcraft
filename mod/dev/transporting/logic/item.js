@@ -191,6 +191,7 @@ var TransportingItem = new GameObject("bcTransportingItem", {
 		if (tileEntity){
 			if (tileEntity.addTransportedItem){
 				tileEntity.addTransportedItem(this, this.item, this.direction);
+				return;
 			}
 			if (tileEntity.getTransportSlots){
 				slots = tileEntity.getTransportSlots().input || [];

@@ -1,10 +1,7 @@
 // fast tile access
 var nativeGetTile = ModAPI.requireGlobal("getTile_origin");
 
-// for versions of CE older than 1.06
-var UpdatableSaver = ModAPI.requireGlobal("UpdatableSaver");
-
-// 
+// constants
 var FURNACE_FUEL_MAP = {
 	5: 300,
 	6: 100,
@@ -33,7 +30,7 @@ var FURNACE_FUEL_MAP = {
 };
 
 // gui fonts
-var STD_FONT_MEDIUM = {color: android.graphics.Color.WHITE, size: 28, shadow: .7};
-var RED_FONT_MEDIUM = {color: android.graphics.Color.RED, size: 28, shadow: .7};
+var STD_FONT_MEDIUM = {color: android.graphics.Color.WHITE, size: 28, shadow: 0.5};
+var RED_FONT_MEDIUM = {color: android.graphics.Color.RED, size: 28, shadow: 0.5};
 
 

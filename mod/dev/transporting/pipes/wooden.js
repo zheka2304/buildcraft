@@ -47,7 +47,7 @@ TileEntity.registerPrototype(BlockID.pipeItemWooden, {
 				tileEntity.getTransportedItem();
 			}
 			if (tileEntity.getTransportSlots){
-				slots = tileEntity.getTransportSlots().ouput || [];
+				slots = tileEntity.getTransportSlots().output || [];
 				slotsInitialized = true;
 			}
 		}

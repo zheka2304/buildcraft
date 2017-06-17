@@ -5,10 +5,36 @@ IDRegistry.genItemID("engineStone");
 Item.createItem("engineStone", "Stirling Engine", {name: "engine_stone"});
 
 IDRegistry.genItemID("engineIron");
-Item.createItem("engineIron", "ICE", {name: "engine_iron"});
+Item.createItem("engineIron", "Combustion Engine", {name: "engine_iron"});
 
 IDRegistry.genItemID("engineElectric");
 Item.createItem("engineElectric", "Electric Engine", {name: "engine_electric"});
+
+Recipes.addShaped({id: ItemID.engineWooden, count: 1, data: 0}, [
+	"aaa",
+	" b ",
+	"oxo"
+], ['x', 33, -1, 'a', 5, -1, 'b', 20, -1, 'o', ItemID.gearWood, 0]);
+
+Recipes.addShaped({id: ItemID.engineStone, count: 1, data: 0}, [
+	"aaa",
+	" b ",
+	"oxo"
+], ['x', 33, -1, 'a', 4, -1, 'b', 20, -1, 'o', ItemID.gearStone, 0]);
+
+Recipes.addShaped({id: ItemID.engineIron, count: 1, data: 0}, [
+	"aaa",
+	" b ",
+	"oxo"
+], ['x', 33, -1, 'a', 265, 0, 'b', 20, -1, 'o', ItemID.gearIron, 0]);
+
+if(IndustrialCraftAPI){
+	Recipes.addShaped({id: ItemID.engineElectric, count: 1, data: 0}, [
+		"aaa",
+		" b ",
+		"oxo"
+	], ['x', 33, -1, 'a', ItemID.ingotTin, 0, 'b', 20, -1, 'o', ItemID.gearTin, 0]);
+}
 
 Item.registerUseFunction("engineWooden", function(coords, item, block){
 	var block = World.getBlock(coords.relative.x, coords.relative.y, coords.relative.z);
