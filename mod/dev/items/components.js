@@ -43,7 +43,8 @@ Recipes.addShaped({id: ItemID.gearDiamond, count: 1, data: 0}, [
 	" x "
 ], ['x', 264, 0, 'o', ItemID.gearGold, 0]);
 
-if(IndustrialCraftAPI){
+
+Callback.addCallback("BC-ICore", function(ICore){
 	IDRegistry.genItemID("gearTin");
 	Item.createItem("gearTin", "Tin Gear", {name: "gear_tin"});
 	
@@ -52,7 +53,7 @@ if(IndustrialCraftAPI){
 		"xox",
 		" x "
 	], ['x', ItemID.ingotTin, 0, 'o', ItemID.gearStone, 0]);
-}
+});
 
 
 IDRegistry.genItemID("pipeSealant");

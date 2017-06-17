@@ -1,6 +1,6 @@
 Translation.addTranslation("Redstone Engine", {ru: "Двигатель на красном камне"});
 Translation.addTranslation("Stirling Engine", {ru: "Двигатель Стирлинга"});
-Translation.addTranslation("Combustion Engine", {ru: "Двигатель внутреннего сгорания"});
+Translation.addTranslation("ICE", {ru: "ДВС"});
 Translation.addTranslation("Electric Engine", {ru: "Электрический двигатель"});
 
 Translation.addTranslation("Wooden Transport Pipe", {ru: "Деревянная транспортная труба"});

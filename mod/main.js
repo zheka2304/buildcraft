@@ -38,7 +38,7 @@ var RED_FONT_MEDIUM = {color: android.graphics.Color.RED, size: 28, shadow: 0.5}
 
 Translation.addTranslation("Redstone Engine", {ru: "Двигатель на красном камне"});
 Translation.addTranslation("Stirling Engine", {ru: "Двигатель Стирлинга"});
-Translation.addTranslation("Combustion Engine", {ru: "Двигатель внутреннего сгорания"});
+Translation.addTranslation("ICE", {ru: "ДВС"});
 Translation.addTranslation("Electric Engine", {ru: "Электрический двигатель"});
 
 Translation.addTranslation("Wooden Transport Pipe", {ru: "Деревянная транспортная труба"});
@@ -461,7 +461,8 @@ Recipes.addShaped({id: ItemID.gearDiamond, count: 1, data: 0}, [
 	" x "
 ], ['x', 264, 0, 'o', ItemID.gearGold, 0]);
 
-if(IndustrialCraftAPI){
+
+Callback.addCallback("BC-ICore", function(ICore){
 	IDRegistry.genItemID("gearTin");
 	Item.createItem("gearTin", "Tin Gear", {name: "gear_tin"});
 	
@@ -470,7 +471,7 @@ if(IndustrialCraftAPI){
 		"xox",
 		" x "
 	], ['x', ItemID.ingotTin, 0, 'o', ItemID.gearStone, 0]);
-}
+});
 
 
 IDRegistry.genItemID("pipeSealant");
@@ -496,7 +497,7 @@ IDRegistry.genItemID("engineStone");
 Item.createItem("engineStone", "Stirling Engine", {name: "engine_stone"});
 
 IDRegistry.genItemID("engineIron");
-Item.createItem("engineIron", "Combustion Engine", {name: "engine_iron"});
+Item.createItem("engineIron", "ICE", {name: "engine_iron"});
 
 IDRegistry.genItemID("engineElectric");
 Item.createItem("engineElectric", "Electric Engine", {name: "engine_electric"});
@@ -519,13 +520,16 @@ Recipes.addShaped({id: ItemID.engineIron, count: 1, data: 0}, [
 	"oxo"
 ], ['x', 33, -1, 'a', 265, 0, 'b', 20, -1, 'o', ItemID.gearIron, 0]);
 
-if(IndustrialCraftAPI){
+
+Callback.addCallback("BC-ICore", function(ICore){
 	Recipes.addShaped({id: ItemID.engineElectric, count: 1, data: 0}, [
 		"aaa",
 		" b ",
 		"oxo"
 	], ['x', 33, -1, 'a', ItemID.ingotTin, 0, 'b', 20, -1, 'o', ItemID.gearTin, 0]);
-}
+});
+
+
 
 Item.registerUseFunction("engineWooden", function(coords, item, block){
 	var block = World.getBlock(coords.relative.x, coords.relative.y, coords.relative.z);
@@ -2401,7 +2405,7 @@ function getFuelForStoneEngine(container, slotName){
 
 var guiIronEngine = new UI.StandartWindow({
 	standart: {
-		header: {text: {text: "Combustion Engine"}},
+		header: {text: {text: "ICE"}},
 		inventory: {standart: true},
 		background: {standart: true}
 	},
